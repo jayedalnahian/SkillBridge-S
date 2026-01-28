@@ -1,0 +1,26 @@
+
+// ========================================
+// TutorProfile Table
+// ========================================
+
+model TutorProfile {
+  id            String   @id @default(uuid())
+  userProfileId String   @unique
+  bio           String   @db.Text
+  hourlyRate    Decimal  @db.Decimal(10, 2)
+  experience    Int
+  averageRating Decimal  @default(0.0) @db.Decimal(3, 2)
+  totalReviews  Int      @default(0)
+  isApproved    Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Relations
+  userProfile     UserProfile      @relation(fields: [userProfileId], references: [id], onDelete: Cascade)
+  tutorCategories TutorCategory[]
+  availability    Availability[]
+  bookings        Booking[]        @relation("TutorBookings")
+  reviews         Review[]         @relation("TutorReviews")
+
+  @@map("tutor_profiles")
+}

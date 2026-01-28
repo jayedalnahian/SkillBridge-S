@@ -1,0 +1,35 @@
+// =====================================
+// AVAILABILITY TABLE
+// =====================================
+
+model Availability {
+  id             String    @id @default(uuid())
+  tutorProfileId String
+  dayOfWeek      Days
+  startTime      String    @db.VarChar(10)
+  endTime        String    @db.VarChar(10)
+  duration       Int
+  isBooked       Boolean   @default(false)
+  maxStudents    Int       @default(1)
+  specificDate   DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  // Relations
+  tutorProfile TutorProfile @relation(fields: [tutorProfileId], references: [id], onDelete: Cascade)
+
+  @@map("availability")
+}
+
+
+
+
+enum Days {
+  MONDAY
+  TUESDAY
+  WEDNESDAY
+  THURSDAY
+  FRIDAY
+  SATURDAY
+  SUNDAY
+}

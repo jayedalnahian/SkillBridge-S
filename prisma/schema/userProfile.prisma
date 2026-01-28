@@ -1,0 +1,30 @@
+model UserProfile {
+  id          String    @id @default(uuid())
+  userId      String    @unique
+  role        Role      @default(STUDENT)
+  status      Status    @default(ACTIVE)
+  phone       String?   @db.VarChar(20)
+  address     String?   @db.Text
+  lastLoginAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  // Relations
+  user              User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tutorProfile      TutorProfile?
+  bookingsAsStudent Booking[]     @relation("StudentBookings")
+  reviewsAsStudent  Review[]      @relation("StudentReviews")
+
+  @@map("user_profiles")
+}
+
+enum Role {
+  STUDENT
+  TUTOR
+  ADMIN
+}
+
+enum Status {
+  ACTIVE
+  BANNED
+}
