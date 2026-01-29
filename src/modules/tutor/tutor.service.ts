@@ -1,4 +1,5 @@
 import { prisma } from "../../lib/prisma"
+import { CreateBookingInput } from "../availability/availablity.types"
 import { ApplyTutorInput, UpdateTutorProfileInput } from "./tutor.types"
 
 
@@ -325,6 +326,9 @@ const getTutorAvailability = async (tutorProfileId: string) => {
 
     return availability
 }
+
+
+
 
 
 

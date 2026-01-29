@@ -32,3 +32,9 @@ AvailabilityRouter.delete("/:id",
     auth(UserRole.TUTOR),
     AvailablityController.deleteAvailabilityController
 );
+
+
+AvailabilityRouter.get("/:id/availability",
+    auth(UserRole.TUTOR),
+    AvailablityController.getTutorAvailabilityController
+);
