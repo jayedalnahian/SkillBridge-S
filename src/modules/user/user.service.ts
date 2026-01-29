@@ -1,3 +1,4 @@
+import { BookingStatus } from "../../../generated/prisma/enums"
 import { prisma } from "../../lib/prisma"
 
 const getAllUsers = async ({
@@ -152,4 +153,52 @@ const updateUserStatus = async ({ userId }: { userId: string }) => {
 
 
 
-export const userService = { getAllUsers, updateUserStatus }
+const getStudentDashboardStats = async (studentProfileId: string) => {
+    const now = new Date()
+
+    const [
+        totalBookings,
+        upcomingSessions,
+        completedSessions,
+    ] = await prisma.$transaction([
+        // Total bookings
+        prisma.booking.count({
+            where: {
+                studentId: studentProfileId,
+            },
+        }),
+
+        // Upcoming sessions
+        prisma.booking.count({
+            where: {
+                studentId: studentProfileId,
+                status: {
+                    in: [BookingStatus.PENDING, BookingStatus.CONFIRMED],
+                },
+                startDateTime: {
+                    gt: now,
+                },
+            },
+        }),
+
+        // Completed sessions
+        prisma.booking.count({
+            where: {
+                studentId: studentProfileId,
+                status: BookingStatus.COMPLETED,
+            },
+        }),
+    ])
+
+    return {
+        totalBookings,
+        upcomingSessions,
+        completedSessions,
+    }
+}
+
+
+
+
+
+export const userService = { getAllUsers, updateUserStatus, getStudentDashboardStats }

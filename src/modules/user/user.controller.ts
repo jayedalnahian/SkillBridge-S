@@ -69,6 +69,44 @@ const updateUserStatus = async (req: Request, res: Response) => {
 
 
 
+const getStudentDashboardController = async (
+    req: Request,
+    res: Response
+) => {
+    try {
+        const studentProfileId = req.user?.userProfileId
+
+        if (!studentProfileId) {
+            return res.status(401).json({
+                success: false,
+                message: "Unauthorized",
+                data: null,
+                error: "Student profile not found",
+            })
+        }
+
+        const stats = await userService.getStudentDashboardStats(
+            studentProfileId
+        )
+
+        res.status(200).json({
+            success: true,
+            message: "Student dashboard stats retrieved successfully",
+            data: stats,
+            error: null,
+        })
+    } catch (error: any) {
+        res.status(500).json({
+            success: false,
+            message: error.message || "Something went wrong",
+            data: null,
+            error,
+        })
+    }
+}
 
 
-export const userController = { getAllUser, updateUserStatus }
+
+
+
+export const userController = { getStudentDashboardController,getAllUser, updateUserStatus }
