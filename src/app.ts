@@ -6,6 +6,7 @@ import { AuthRouter } from "./modules/auth/auth.routes";
 import { CategoryRouter } from "./modules/category/category.routes";
 import { UserRouter } from "./modules/user/user.routes";
 import { TutorRouter } from "./modules/tutor/tutor.routes";
+import { AvailabilityRouter } from "./modules/availability/availability.routes";
 const app: Application = express()
 
 
@@ -20,6 +21,8 @@ app.use("/api/v1/auth", AuthRouter)
 app.use("/api/v1/categories", CategoryRouter)
 app.use("/api/v1/users", UserRouter)
 app.use("/api/v1/tutors", TutorRouter)
+app.use("/api/v1/availability", AvailabilityRouter)
+
 
 app.all("/api/auth/*splat", toNodeHandler(auth));
 

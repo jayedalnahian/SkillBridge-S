@@ -298,6 +298,35 @@ const approveTutor = async (userProfileId: string) => {
 }
 
 
+const getTutorAvailability = async (tutorProfileId: string) => {
+    // 1️⃣ Check tutor exists
+    const tutor = await prisma.tutorProfile.findUnique({
+        where: { id: tutorProfileId },
+    })
+
+    if (!tutor) {
+        throw new Error("Tutor profile not found")
+    }
+
+    // 2️⃣ Fetch available slots (not booked)
+    const now = new Date()
+
+    const availability = await prisma.availability.findMany({
+        where: {
+            tutorProfileId,
+            isBooked: false, // only free slots
+            OR: [
+                { specificDate: null }, // weekly slots
+                { specificDate: { gte: now } }, // future specificDate slots
+            ],
+        },
+        orderBy: { dayOfWeek: "asc", startTime: "asc" }, // sorted nicely
+    })
+
+    return availability
+}
 
 
-export const tutorService = { getTutors, approveTutor, applyForTutor, getTutorApplicationStatus , updateTutorProfile}
+
+
+export const tutorService = { getTutorAvailability, getTutors, approveTutor, applyForTutor, getTutorApplicationStatus , updateTutorProfile}
