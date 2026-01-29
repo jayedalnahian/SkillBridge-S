@@ -17,12 +17,8 @@ model Availability {
 
   // Relations
   tutorProfile TutorProfile @relation(fields: [tutorProfileId], references: [id], onDelete: Cascade)
-
-  @@map("availability")
+  bookings     Booking[]
 }
-
-
-
 
 enum Days {
   MONDAY

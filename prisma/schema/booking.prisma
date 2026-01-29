@@ -1,42 +1,37 @@
 // =====================================
 // BOOKING TABLE
 // =====================================
-
 model Booking {
-  id                   String        @id @default(uuid())
-  studentId            String
-  tutorProfileId       String
-  availabilityId       String?
-  startDateTime        DateTime
-  endDateTime          DateTime
-  duration             Int
-  price                Decimal       @db.Decimal(10, 2)
-  status               BookingStatus @default(PENDING)
-  meetingLink          String?       @db.VarChar(500)
-  meetingType          MeetingTypes  @default(ONLINE)
-  studentNotes         String?       @db.Text
-  cancelledBy          CancelledBy?
-  cancellationReason   String?       @db.Text
-  cancelledAt          DateTime?
-  createdAt            DateTime      @default(now())
-  updatedAt            DateTime      @updatedAt
+  id                 String        @id @default(uuid())
+  studentId          String
+  tutorProfileId     String
+  availabilityId     String? // optional
+  startDateTime      DateTime
+  endDateTime        DateTime
+  duration           Int
+  price              Decimal       @db.Decimal(10, 2)
+  status             BookingStatus @default(PENDING)
+  meetingLink        String?       @db.VarChar(500)
+  meetingType        MeetingTypes  @default(ONLINE)
+  studentNotes       String?       @db.Text
+  cancelledBy        CancelledBy?
+  cancellationReason String?       @db.Text
+  cancelledAt        DateTime?
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
 
   // Relations
   student      UserProfile  @relation("StudentBookings", fields: [studentId], references: [id])
   tutorProfile TutorProfile @relation("TutorBookings", fields: [tutorProfileId], references: [id])
   review       Review?      @relation("BookingReview")
 
-  @@map("bookings")
+  availability Availability? @relation(fields: [availabilityId], references: [id]) // ✅ relation field
 }
-
-
 
 enum MeetingTypes {
   ONLINE
   IN_PERSON
 }
-
-
 
 enum BookingStatus {
   PENDING
@@ -46,8 +41,6 @@ enum BookingStatus {
   NO_SHOW
   REFUNDED
 }
-
-
 
 enum CancelledBy {
   STUDENT

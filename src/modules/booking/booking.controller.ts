@@ -43,6 +43,39 @@ const createBookingController = async (req: Request, res: Response) => {
     }
 }
 
+const getUserBookingsController = async (req: Request, res: Response) => {
+    try {
+        const userProfileId = req.user?.userProfileId
+        const role = req.user?.role
+
+        if (!userProfileId || !role) {
+            return res.status(401).json({
+                success: false,
+                message: "Unauthorized",
+                data: null,
+                error: "Missing user information",
+            })
+        }
+
+        const status = typeof req.query.status === "string" ? req.query.status : "ACTIVE"
+
+        const bookings = await bookingService.getUserBookings({ userProfileId, role, status })
+
+        res.status(200).json({
+            success: true,
+            message: "Bookings retrieved successfully",
+            data: bookings,
+            error: null,
+        })
+    } catch (error: any) {
+        res.status(500).json({
+            success: false,
+            message: error.message || "Something went wrong",
+            data: null,
+            error,
+        })
+    }
+}
 
 
-export const bookingController = { createBookingController }
+export const bookingController = { createBookingController, getUserBookingsController }

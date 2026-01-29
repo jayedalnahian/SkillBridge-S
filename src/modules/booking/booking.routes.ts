@@ -5,4 +5,4 @@ import { bookingController } from "./booking.controller"
 export const BookingRouter = Router()
 
 
-BookingRouter.patch("/:id/approve", auth(UserRole.ADMIN), bookingController.createBookingController)
+BookingRouter.post("/:id/approve", auth(UserRole.STUDENT), bookingController.createBookingController)
