@@ -1,6 +1,7 @@
 import { Request, Response } from "express"
-import { CreateBookingInput } from "./booking.types"
+import { BookingStatusFilter, CreateBookingInput } from "./booking.types"
 import { bookingService } from './booking.service';
+import { BookingStatus } from "../../../generated/prisma/enums";
 
 const createBookingController = async (req: Request, res: Response) => {
     try {
@@ -57,9 +58,27 @@ const getUserBookingsController = async (req: Request, res: Response) => {
             })
         }
 
-        const status = typeof req.query.status === "string" ? req.query.status : "ACTIVE"
+        // Get status from query and validate
+        const statusQuery = req.query.status
+        let status: BookingStatus | undefined
+        if (typeof statusQuery === "string") {
+            if (Object.values(BookingStatus).includes(statusQuery as BookingStatus)) {
+                status = statusQuery as BookingStatus
+            } else {
+                return res.status(400).json({
+                    success: false,
+                    message: "Invalid booking status",
+                    data: null,
+                    error: null,
+                })
+            }
+        }
 
-        const bookings = await bookingService.getUserBookings({ userProfileId, role, status })
+        const bookings = await bookingService.getUserBookings({
+            userProfileId,
+            role,
+            status,
+        })
 
         res.status(200).json({
             success: true,
@@ -76,6 +95,5 @@ const getUserBookingsController = async (req: Request, res: Response) => {
         })
     }
 }
-
 
 export const bookingController = { createBookingController, getUserBookingsController }

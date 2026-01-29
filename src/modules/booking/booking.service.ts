@@ -1,6 +1,5 @@
 import { prisma } from "../../lib/prisma"
-import { UserRole } from "../../middlewares/auth"
-import { CreateBookingInput } from "./booking.types"
+import { CreateBookingInput, GetUserBookingsInput } from "./booking.types"
 import { v4 as uuidv4 } from "uuid"
 
 const createBooking = async (data: CreateBookingInput) => {
@@ -71,13 +70,10 @@ const createBooking = async (data: CreateBookingInput) => {
 
 const getUserBookings = async ({
     userProfileId,
-    role, // string literal
+    role,
     status,
-}: {
-    userProfileId: string
-    role: UserRole
-    status?: string
-}) => {
+}: GetUserBookingsInput) => {
+    // Build Prisma where condition
     const where: any = {}
 
     if (role === "STUDENT") {
@@ -92,6 +88,7 @@ const getUserBookings = async ({
         where.status = status
     }
 
+    // Fetch bookings from DB
     const bookings = await prisma.booking.findMany({
         where,
         orderBy: { startDateTime: "desc" },
@@ -101,7 +98,9 @@ const getUserBookings = async ({
                     userProfile: {
                         select: {
                             id: true,
-                            user: { select: { name: true, email: true } },
+                            user: {
+                                select: { id: true, name: true, email: true },
+                            },
                         },
                     },
                 },
@@ -109,10 +108,9 @@ const getUserBookings = async ({
             student: {
                 select: {
                     id: true,
-                    user: { select: { name: true, email: true } },
+                    user: { select: { id: true, name: true, email: true } },
                 },
             },
-            availability: true,
             review: true,
         },
     })
