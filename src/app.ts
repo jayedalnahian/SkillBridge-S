@@ -8,6 +8,7 @@ import { UserRouter } from "./modules/user/user.routes";
 import { TutorRouter } from "./modules/tutor/tutor.routes";
 import { AvailabilityRouter } from "./modules/availability/availability.routes";
 import { BookingRouter } from "./modules/booking/booking.routes";
+import { ReviewRouter } from "./modules/review/review.routes";
 const app: Application = express()
 
 
@@ -24,6 +25,7 @@ app.use("/api/v1/users", UserRouter)
 app.use("/api/v1/tutors", TutorRouter)
 app.use("/api/v1/availability", AvailabilityRouter)
 app.use("/api/v1/booking", BookingRouter)
+app.use("/api/v1/review", ReviewRouter)
 
 
 app.all("/api/auth/*splat", toNodeHandler(auth));
