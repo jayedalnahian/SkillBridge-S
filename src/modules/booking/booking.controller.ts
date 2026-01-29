@@ -96,4 +96,40 @@ const getUserBookingsController = async (req: Request, res: Response) => {
     }
 }
 
-export const bookingController = { createBookingController, getUserBookingsController }
+
+
+const getBookingByIdController = async (req: Request, res: Response) => {
+    try {
+        const Id = req.params.id || ""
+        const bookingId = typeof(Id) === "string"? Id : ""
+        const userProfileId = req.user?.userProfileId
+        const role = req.user?.role
+
+        if (!userProfileId || !role) {
+            return res.status(401).json({
+                success: false,
+                message: "Unauthorized",
+                data: null,
+                error: "Missing user information",
+            })
+        }
+
+        const booking = await bookingService.getBookingById({ bookingId, userProfileId, role })
+
+        res.status(200).json({
+            success: true,
+            message: "Booking retrieved successfully",
+            data: booking,
+            error: null,
+        })
+    } catch (error: any) {
+        res.status(400).json({
+            success: false,
+            message: error.message || "Something went wrong",
+            data: null,
+            error,
+        })
+    }
+}
+
+export const bookingController = { createBookingController, getBookingByIdController, getUserBookingsController }

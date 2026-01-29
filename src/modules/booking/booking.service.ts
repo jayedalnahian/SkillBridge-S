@@ -1,4 +1,5 @@
 import { prisma } from "../../lib/prisma"
+import { UserRole } from "../../middlewares/auth"
 import { CreateBookingInput, GetUserBookingsInput } from "./booking.types"
 import { v4 as uuidv4 } from "uuid"
 
@@ -119,4 +120,58 @@ const getUserBookings = async ({
 }
 
 
-export const bookingService = { createBooking, getUserBookings }
+
+const getBookingById = async ({
+    bookingId,
+    userProfileId,
+    role,
+}: {
+    bookingId: string
+    userProfileId: string
+    role: UserRole
+}) => {
+    // Fetch booking with related data
+    const booking = await prisma.booking.findUnique({
+        where: { id: bookingId },
+        include: {
+            tutorProfile: {
+                include: {
+                    userProfile: {
+                        select: {
+                            id: true,
+                            user: {
+                                select: { id: true, name: true, email: true },
+                            },
+                        },
+                    },
+                },
+            },
+            student: {
+                select: {
+                    id: true,
+                    user: {
+                        select: { id: true, name: true, email: true },
+                    },
+                },
+            },
+            review: true,
+        },
+    })
+
+    if (!booking) {
+        throw new Error("Booking not found")
+    }
+
+    // Authorization: only the student or tutor can access
+    if (
+        (role === "STUDENT" && booking.studentId !== userProfileId) ||
+        (role === "TUTOR" && booking.tutorProfileId !== userProfileId)
+    ) {
+        throw new Error("Access denied")
+    }
+
+    return booking
+}
+
+
+export const bookingService = { createBooking, getUserBookings, getBookingById }
