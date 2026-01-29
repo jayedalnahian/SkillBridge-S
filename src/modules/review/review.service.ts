@@ -1,6 +1,6 @@
 import { BookingStatus } from "../../../generated/prisma/enums"
 import { prisma } from "../../lib/prisma"
-import { CreateReviewInput } from "./review.types"
+import { CreateReviewInput, GetTutorReviewsInput } from "./review.types"
 
 const createReview = async ({
     bookingId,
@@ -78,4 +78,125 @@ const createReview = async ({
 }
 
 
-export const reviewService = {createReview}
+
+const getTutorReviews = async ({
+    tutorProfileId,
+    page,
+    limit,
+    rating,
+    sortBy = 'createdAt',
+    sortOrder = 'desc',
+    includeTutorInfo = false,
+}: GetTutorReviewsInput) => {
+    const skip = (page - 1) * limit
+
+    // Build where clause
+    const whereClause: any = { tutorProfileId }
+
+    // Filter by rating if provided
+    if (rating !== undefined && rating >= 1 && rating <= 5) {
+        whereClause.rating = rating
+    }
+
+    // Validate tutor exists
+    const tutorExists = await prisma.tutorProfile.findUnique({
+        where: { id: tutorProfileId },
+        select: { id: true }
+    })
+
+    if (!tutorExists) {
+        throw new Error("Tutor profile not found")
+    }
+
+    // Validate sort field
+    const validSortFields = ['createdAt', 'rating', 'updatedAt']
+    const safeSortBy = validSortFields.includes(sortBy) ? sortBy : 'createdAt'
+
+    const [reviews, total] = await prisma.$transaction([
+        prisma.review.findMany({
+            where: whereClause,
+            skip,
+            take: limit,
+            orderBy: { [safeSortBy]: sortOrder },
+            include: {
+                student: {
+                    select: {
+                        id: true,
+                        user: {
+                            select: {
+                                id: true,
+                                name: true,
+                                image: true,
+                            },
+                        },
+                    },
+                },
+                booking: {
+                    select: {
+                        id: true,
+                        startDateTime: true,
+                        meetingType: true,
+                    },
+                },
+            },
+        }),
+        prisma.review.count({ where: whereClause }),
+    ])
+
+    // Get tutor info if requested
+    let tutorInfo = null
+    if (includeTutorInfo) {
+        tutorInfo = await prisma.tutorProfile.findUnique({
+            where: { id: tutorProfileId },
+            select: {
+                id: true,
+                averageRating: true,
+                totalReviews: true,
+                userProfile: {
+                    select: {
+                        user: {
+                            select: {
+                                name: true,
+                                image: true,
+                            },
+                        },
+                    },
+                },
+            },
+        })
+    }
+
+    // Calculate rating distribution
+    const ratingDistribution = await prisma.review.groupBy({
+        by: ['rating'],
+        where: { tutorProfileId },
+        _count: { rating: true },
+        orderBy: { rating: 'desc' }
+    })
+
+    return {
+        meta: {
+            page,
+            limit,
+            total,
+            totalPages: Math.ceil(total / limit),
+            hasNextPage: page * limit < total,
+            hasPrevPage: page > 1,
+        },
+        data: reviews,
+        tutorInfo,
+        statistics: {
+            averageRating: tutorInfo?.averageRating || 0,
+            totalReviews: total,
+            ratingDistribution: ratingDistribution.reduce((acc, curr) => ({
+                ...acc,
+                [curr.rating]: curr._count.rating
+            }), {}),
+        }
+    }
+}
+
+
+
+
+export const reviewService = { createReview, getTutorReviews }
