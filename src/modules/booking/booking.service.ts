@@ -1,7 +1,7 @@
 import { BookingStatus, CancelledBy } from "../../../generated/prisma/enums"
 import { prisma } from "../../lib/prisma"
 import { UserRole } from "../../middlewares/auth"
-import { CancelBookingInput, CreateBookingInput, GetUserBookingsInput } from "./booking.types"
+import { CancelBookingInput, CompleteBookingInput, CreateBookingInput, GetUserBookingsInput } from "./booking.types"
 import { v4 as uuidv4 } from "uuid"
 
 const createBooking = async (data: CreateBookingInput) => {
@@ -223,4 +223,35 @@ const cancelBooking = async ({
     return updatedBooking
 }
 
-export const bookingService = { cancelBooking, createBooking, getUserBookings, getBookingById }
+
+const completeBooking = async ({
+    bookingId,
+    userProfileId,
+    role,
+}: CompleteBookingInput) => {
+    // 1️⃣ Find booking
+    const booking = await prisma.booking.findUnique({
+        where: { id: bookingId },
+    })
+
+    if (!booking) throw new Error("Booking not found")
+
+    // 2️⃣ Authorization: only tutor can complete
+    if (role !== "TUTOR" || booking.tutorProfileId !== userProfileId) {
+        throw new Error("Only the tutor can mark this booking as completed")
+    }
+
+    if (booking.status !== BookingStatus.CONFIRMED) {
+        throw new Error("Only confirmed bookings can be completed")
+    }
+
+    // 3️⃣ Update booking status
+    const updatedBooking = await prisma.booking.update({
+        where: { id: bookingId },
+        data: { status: BookingStatus.COMPLETED },
+    })
+
+    return updatedBooking
+}
+
+export const bookingService = { completeBooking, cancelBooking, createBooking, getUserBookings, getBookingById }

@@ -172,5 +172,41 @@ const cancelBookingController = async (req: Request, res: Response) => {
         })
     }
 }
+const completeBookingController = async (req: Request, res: Response) => {
+    try {
+        const bookingId = typeof (req.params.id) === "string" ? req.params.id : ""
+        const userProfileId = req.user?.userProfileId
+        const role = req.user?.role
 
-export const bookingController = { cancelBookingController,createBookingController, getBookingByIdController, getUserBookingsController }
+        if (!userProfileId || !role) {
+            return res.status(401).json({
+                success: false,
+                message: "Unauthorized",
+                data: null,
+                error: "Missing user information",
+            })
+        }
+
+        const completedBooking = await bookingService.completeBooking({
+            bookingId,
+            userProfileId,
+            role,
+        })
+
+        res.status(200).json({
+            success: true,
+            message: "Booking marked as completed",
+            data: completedBooking,
+            error: null,
+        })
+    } catch (error: any) {
+        res.status(400).json({
+            success: false,
+            message: error.message || "Something went wrong",
+            data: null,
+            error,
+        })
+    }
+}
+
+export const bookingController = { completeBookingController, cancelBookingController,createBookingController, getBookingByIdController, getUserBookingsController }

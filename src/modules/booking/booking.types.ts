@@ -16,6 +16,11 @@ export interface CancelBookingInput {
     role: UserRole
     reason?: string
 }
+export interface CompleteBookingInput {
+    bookingId: string
+    userProfileId: string
+    role: UserRole
+}
 
 
 export interface CreateBookingInput {
