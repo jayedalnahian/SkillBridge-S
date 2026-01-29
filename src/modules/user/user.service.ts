@@ -200,5 +200,58 @@ const getStudentDashboardStats = async (studentProfileId: string) => {
 
 
 
+const getTutorDashboardStats = async (tutorProfileId: string) => {
+    // 1️⃣ Total earnings (only completed sessions)
+    const earningsAgg = await prisma.booking.aggregate({
+        where: {
+            tutorProfileId,
+            status: BookingStatus.COMPLETED,
+        },
+        _sum: {
+            price: true,
+        },
+    })
 
-export const userService = { getAllUsers, updateUserStatus, getStudentDashboardStats }
+    const totalEarnings = earningsAgg._sum.price ?? 0
+
+    // 2️⃣ Total completed sessions
+    const totalSessions = await prisma.booking.count({
+        where: {
+            tutorProfileId,
+            status: BookingStatus.COMPLETED,
+        },
+    })
+
+    // 3️⃣ Pending bookings
+    const pendingBookings = await prisma.booking.count({
+        where: {
+            tutorProfileId,
+            status: BookingStatus.PENDING,
+        },
+    })
+
+    // 4️⃣ Average rating
+    const ratingAgg = await prisma.review.aggregate({
+        where: {
+            tutorProfileId,
+        },
+        _avg: {
+            rating: true,
+        },
+    })
+
+    const averageRating = ratingAgg._avg.rating ?? 0
+
+    return {
+        totalEarnings,
+        totalSessions,
+        pendingBookings,
+        averageRating: Number(averageRating.toFixed(2)),
+    }
+}
+
+
+
+
+
+export const userService = { getAllUsers, getTutorDashboardStats, updateUserStatus, getStudentDashboardStats }
