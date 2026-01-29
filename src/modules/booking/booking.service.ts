@@ -1,6 +1,7 @@
+import { BookingStatus, CancelledBy } from "../../../generated/prisma/enums"
 import { prisma } from "../../lib/prisma"
 import { UserRole } from "../../middlewares/auth"
-import { CreateBookingInput, GetUserBookingsInput } from "./booking.types"
+import { CancelBookingInput, CreateBookingInput, GetUserBookingsInput } from "./booking.types"
 import { v4 as uuidv4 } from "uuid"
 
 const createBooking = async (data: CreateBookingInput) => {
@@ -174,4 +175,52 @@ const getBookingById = async ({
 }
 
 
-export const bookingService = { createBooking, getUserBookings, getBookingById }
+
+const cancelBooking = async ({
+    bookingId,
+    userProfileId,
+    role,
+    reason,
+}: CancelBookingInput) => {
+    // 1️⃣ Find booking
+    const booking = await prisma.booking.findUnique({
+        where: { id: bookingId },
+    })
+
+    if (!booking) throw new Error("Booking not found")
+
+    // 2️⃣ Authorization
+    if (
+        (role === "STUDENT" && booking.studentId !== userProfileId) ||
+        (role === "TUTOR" && booking.tutorProfileId !== userProfileId)
+    ) {
+        throw new Error("Access denied")
+    }
+
+    if (booking.status === BookingStatus.CANCELLED) {
+        throw new Error("Booking is already cancelled")
+    }
+
+    // 3️⃣ Update booking
+    const updatedBooking = await prisma.booking.update({
+        where: { id: bookingId },
+        data: {
+            status: BookingStatus.CANCELLED,
+            cancelledBy: role === "STUDENT" ? CancelledBy.STUDENT : CancelledBy.TUTOR,
+            cancellationReason: reason || '',
+            cancelledAt: new Date(),
+        },
+    })
+
+    // 4️⃣ Free availability slot if exists
+    if (booking.availabilityId) {
+        await prisma.availability.update({
+            where: { id: booking.availabilityId },
+            data: { isBooked: false },
+        })
+    }
+
+    return updatedBooking
+}
+
+export const bookingService = { cancelBooking, createBooking, getUserBookings, getBookingById }

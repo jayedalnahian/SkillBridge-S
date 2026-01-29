@@ -10,7 +10,12 @@ export type BookingStatusFilter =
     | "NO_SHOW"
     | "REFUNDED"
 
-
+export interface CancelBookingInput {
+    bookingId: string
+    userProfileId: string
+    role: UserRole
+    reason?: string
+}
 
 
 export interface CreateBookingInput {

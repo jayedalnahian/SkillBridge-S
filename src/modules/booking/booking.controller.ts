@@ -1,5 +1,5 @@
 import { Request, Response } from "express"
-import { BookingStatusFilter, CreateBookingInput } from "./booking.types"
+import { CreateBookingInput } from "./booking.types"
 import { bookingService } from './booking.service';
 import { BookingStatus } from "../../../generated/prisma/enums";
 
@@ -101,7 +101,7 @@ const getUserBookingsController = async (req: Request, res: Response) => {
 const getBookingByIdController = async (req: Request, res: Response) => {
     try {
         const Id = req.params.id || ""
-        const bookingId = typeof(Id) === "string"? Id : ""
+        const bookingId = typeof (Id) === "string" ? Id : ""
         const userProfileId = req.user?.userProfileId
         const role = req.user?.role
 
@@ -132,4 +132,45 @@ const getBookingByIdController = async (req: Request, res: Response) => {
     }
 }
 
-export const bookingController = { createBookingController, getBookingByIdController, getUserBookingsController }
+
+
+const cancelBookingController = async (req: Request, res: Response) => {
+    try {
+        const bookingId = typeof (req.params.id) === "string" ? req.params.id : ""
+        const userProfileId = req.user?.userProfileId
+        const role = req.user?.role
+        const reason = typeof req.body.reason === "string" ? req.body.reason : undefined
+
+        if (!userProfileId || !role) {
+            return res.status(401).json({
+                success: false,
+                message: "Unauthorized",
+                data: null,
+                error: "Missing user information",
+            })
+        }
+
+        const cancelledBooking = await bookingService.cancelBooking({
+            bookingId,
+            userProfileId,
+            role,
+            reason,
+        })
+
+        res.status(200).json({
+            success: true,
+            message: "Booking cancelled successfully",
+            data: cancelledBooking,
+            error: null,
+        })
+    } catch (error: any) {
+        res.status(400).json({
+            success: false,
+            message: error.message || "Something went wrong",
+            data: null,
+            error,
+        })
+    }
+}
+
+export const bookingController = { cancelBookingController,createBookingController, getBookingByIdController, getUserBookingsController }
