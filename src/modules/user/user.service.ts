@@ -253,5 +253,71 @@ const getTutorDashboardStats = async (tutorProfileId: string) => {
 
 
 
+const getAdminDashboardStats = async () => {
+    // 1️⃣ Total users
+    const totalUsers = await prisma.userProfile.count()
 
-export const userService = { getAllUsers, getTutorDashboardStats, updateUserStatus, getStudentDashboardStats }
+    // 2️⃣ Total tutors (approved tutors only)
+    const totalTutors = await prisma.tutorProfile.count({
+        where: {
+            isApproved: true,
+        },
+    })
+
+    // 3️⃣ Total bookings
+    const totalBookings = await prisma.booking.count()
+
+    // 4️⃣ Total revenue (completed bookings only)
+    const revenueAgg = await prisma.booking.aggregate({
+        where: {
+            status: BookingStatus.COMPLETED,
+        },
+        _sum: {
+            price: true,
+        },
+    })
+
+    const totalRevenue = revenueAgg._sum.price ?? 0
+
+    return {
+        totalUsers,
+        totalTutors,
+        totalBookings,
+        totalRevenue,
+    }
+}
+
+
+const getPendingTutors = async () => {
+    const pendingTutors = await prisma.tutorProfile.findMany({
+        where: {
+            isApproved: false,
+        },
+        orderBy: {
+            createdAt: "desc",
+        },
+        include: {
+            userProfile: {
+                select: {
+                    id: true,
+                    role: true,
+                    user: {
+                        select: {
+                            id: true,
+                            name: true,
+                            email: true,
+                        },
+                    },
+                },
+            },
+            tutorCategories: {
+                include: {
+                    category: true,
+                },
+            },
+        },
+    })
+
+    return pendingTutors
+}
+export const userService = { getPendingTutors, getAdminDashboardStats, getAllUsers, getTutorDashboardStats, updateUserStatus, getStudentDashboardStats }

@@ -1,7 +1,10 @@
 import { Request, Response } from "express"
 import { userService } from "./user.service"
 
-const getAllUser = async (req: Request, res: Response) => {
+const getAllUser = async (
+    req: Request,
+    res: Response
+) => {
     try {
         const {
             search,
@@ -44,7 +47,10 @@ const getAllUser = async (req: Request, res: Response) => {
     }
 }
 
-const updateUserStatus = async (req: Request, res: Response) => {
+const updateUserStatus = async (
+    req: Request,
+    res: Response
+) => {
     try {
         const userId = req.params.id as string
 
@@ -142,4 +148,52 @@ const getTutorDashboardController = async (
 }
 
 
-export const userController = { getTutorDashboardController, getStudentDashboardController,getAllUser, updateUserStatus }
+
+const getAdminDashboardController = async (
+    req: Request,
+    res: Response
+) => {
+    try {
+        const stats = await userService.getAdminDashboardStats()
+
+        res.status(200).json({
+            success: true,
+            message: "Admin dashboard stats retrieved successfully",
+            data: stats,
+            error: null,
+        })
+    } catch (error: any) {
+        res.status(500).json({
+            success: false,
+            message: error.message || "Something went wrong",
+            data: null,
+            error,
+        })
+    }
+}
+
+
+const getPendingTutorsController = async (
+    req: Request,
+    res: Response
+) => {
+    try {
+        const tutors = await userService.getPendingTutors()
+
+        res.status(200).json({
+            success: true,
+            message: "Pending tutor applications retrieved successfully",
+            data: tutors,
+            error: null,
+        })
+    } catch (error: any) {
+        res.status(500).json({
+            success: false,
+            message: error.message || "Something went wrong",
+            data: null,
+            error,
+        })
+    }
+}
+
+export const userController = { getPendingTutorsController, getAdminDashboardController, getTutorDashboardController, getStudentDashboardController,getAllUser, updateUserStatus }
