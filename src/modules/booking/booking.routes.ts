@@ -10,3 +10,4 @@ BookingRouter.get("/", auth(UserRole.STUDENT, UserRole.TUTOR), bookingController
 BookingRouter.get("/:id", auth(UserRole.STUDENT, UserRole.TUTOR), bookingController.getBookingByIdController)
 BookingRouter.patch("/:id/cancel", auth(UserRole.STUDENT, UserRole.TUTOR), bookingController.cancelBookingController)
 BookingRouter.patch("/:id/complete", auth(UserRole.TUTOR), bookingController.completeBookingController)
+BookingRouter.get("/dashboard", auth(UserRole.ADMIN), bookingController.getAllBookingsController)

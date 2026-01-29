@@ -1,7 +1,7 @@
 import { BookingStatus, CancelledBy } from "../../../generated/prisma/enums"
 import { prisma } from "../../lib/prisma"
 import { UserRole } from "../../middlewares/auth"
-import { CancelBookingInput, CompleteBookingInput, CreateBookingInput, GetUserBookingsInput } from "./booking.types"
+import { CancelBookingInput, CompleteBookingInput, CreateBookingInput, GetAllBookingsInput, GetUserBookingsInput } from "./booking.types"
 import { v4 as uuidv4 } from "uuid"
 
 const createBooking = async (data: CreateBookingInput) => {
@@ -254,4 +254,75 @@ const completeBooking = async ({
     return updatedBooking
 }
 
-export const bookingService = { completeBooking, cancelBooking, createBooking, getUserBookings, getBookingById }
+
+
+const getAllBookings = async ({
+    studentId,
+    tutorProfileId,
+    status,
+    startDate,
+    endDate,
+    page,
+    limit,
+    skip,
+    sortBy = "startDateTime",
+    sortOrder = "desc",
+}: GetAllBookingsInput) => {
+    const andConditions: any[] = []
+
+    if (studentId) {
+        andConditions.push({ studentId })
+    }
+    if (tutorProfileId) {
+        andConditions.push({ tutorProfileId })
+    }
+    if (status) {
+        andConditions.push({ status })
+    }
+    if (startDate) {
+        andConditions.push({ startDateTime: { gte: startDate } })
+    }
+    if (endDate) {
+        andConditions.push({ endDateTime: { lte: endDate } })
+    }
+
+    const whereCondition = andConditions.length > 0 ? { AND: andConditions } : {}
+
+    // Fetch bookings
+    const bookings = await prisma.booking.findMany({
+        where: whereCondition,
+        skip,
+        take: limit,
+        orderBy: { [sortBy]: sortOrder },
+        include: {
+            student: {
+                select: {
+                    id: true,
+                    user: { select: { name: true, email: true } },
+                },
+            },
+            tutorProfile: {
+                select: {
+                    id: true,
+                    userProfile: { select: { user: { select: { name: true, email: true } } } },
+                },
+            },
+            review: true,
+
+        },
+    })
+
+    const total = await prisma.booking.count({ where: whereCondition })
+
+    return {
+        meta: {
+            page,
+            limit,
+            total,
+            totalPages: Math.ceil(total / limit),
+        },
+        data: bookings,
+    }
+}
+
+export const bookingService = { getAllBookings, completeBooking, cancelBooking, createBooking, getUserBookings, getBookingById }

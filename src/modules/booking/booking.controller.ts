@@ -172,6 +172,8 @@ const cancelBookingController = async (req: Request, res: Response) => {
         })
     }
 }
+
+
 const completeBookingController = async (req: Request, res: Response) => {
     try {
         const bookingId = typeof (req.params.id) === "string" ? req.params.id : ""
@@ -209,4 +211,83 @@ const completeBookingController = async (req: Request, res: Response) => {
     }
 }
 
-export const bookingController = { completeBookingController, cancelBookingController,createBookingController, getBookingByIdController, getUserBookingsController }
+
+const getAllBookingsController = async (req: Request, res: Response) => {
+    try {
+        const {
+            studentId,
+            tutorProfileId,
+            status,
+            startDate,
+            endDate,
+            page = "1",
+            limit = "10",
+            sortBy = "startDateTime",
+            sortOrder = "desc",
+        } = req.query
+
+        const pageNum = Number(page)
+        const limitNum = Number(limit)
+        const skip = (pageNum - 1) * limitNum
+
+        // Validate status if provided
+        let bookingStatus: BookingStatus | undefined
+        if (typeof status === "string") {
+            // Ensure the status is valid
+            const validStatuses = Object.values(BookingStatus)
+            if (validStatuses.includes(status as BookingStatus)) {
+                bookingStatus = status as BookingStatus
+            }
+        }
+
+        // Prepare filters, only including defined values
+        const filters: Record<string, any> = {}
+
+        if (studentId && typeof studentId === "string") filters.studentId = studentId
+        if (tutorProfileId && typeof tutorProfileId === "string") filters.tutorProfileId = tutorProfileId
+        if (bookingStatus) filters.status = bookingStatus
+        if (startDate && typeof startDate === "string") {
+            const date = new Date(startDate)
+            if (!isNaN(date.getTime())) filters.startDate = date
+        }
+        if (endDate && typeof endDate === "string") {
+            const date = new Date(endDate)
+            if (!isNaN(date.getTime())) filters.endDate = date
+        }
+
+        const result = await bookingService.getAllBookings({
+            ...filters,
+            page: pageNum,
+            limit: limitNum,
+            skip,
+            sortBy: typeof sortBy === "string" ? sortBy : "startDateTime",
+            sortOrder: sortOrder === "asc" ? "asc" : "desc",
+        })
+
+        res.status(200).json({
+            success: true,
+            message: "Bookings retrieved successfully",
+            meta: result.meta,
+            data: result.data,
+            error: null,
+        })
+    } catch (error: any) {
+        res.status(500).json({
+            success: false,
+            message: error.message || "Something went wrong",
+            data: null,
+            error: error.message || error,
+        })
+    }
+}
+
+
+
+
+
+
+
+
+
+
+export const bookingController = { getAllBookingsController, completeBookingController, cancelBookingController,createBookingController, getBookingByIdController, getUserBookingsController }

@@ -23,6 +23,20 @@ export interface CompleteBookingInput {
 }
 
 
+export interface GetAllBookingsInput {
+    studentId?: string
+    tutorProfileId?: string
+    status?: BookingStatus
+    startDate?: Date
+    endDate?: Date
+    page: number
+    limit: number
+    skip: number
+    sortBy?: string
+    sortOrder?: "asc" | "desc"
+}
+
+
 export interface CreateBookingInput {
     studentId: string
     tutorProfileId: string
