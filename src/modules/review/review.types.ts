@@ -14,3 +14,10 @@ export interface GetTutorReviewsInput {
     sortOrder?: 'asc' | 'desc' | undefined  
     includeTutorInfo?: boolean | undefined 
 }
+
+
+export interface ReplyToReviewInput {
+    reviewId: string
+    tutorProfileId: string
+    response: string
+}

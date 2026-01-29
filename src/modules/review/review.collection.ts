@@ -1,5 +1,6 @@
 import { Request, Response } from "express"
 import { reviewService } from "./review.service"
+import { prisma } from "../../lib/prisma"
 
 const createReviewController = async (req: Request, res: Response) => {
     try {
@@ -101,5 +102,78 @@ const getTutorReviewsController = async (req: Request, res: Response) => {
 
 
 
+const replyToReviewController = async (req: Request, res: Response) => {
+    try {
+        const tutorProfileId = req.user?.tutorProfileId
+        if (!tutorProfileId) {
+            return res.status(401).json({
+                success: false,
+                message: "Unauthorized",
+                data: null,
+                error: "No tutor profile found",
+            })
+        }
 
-export const reviewController = { getTutorReviewsController, createReviewController }
+        const userProfileId = req.user?.userProfileId
+        if (!userProfileId) {
+            return res.status(401).json({
+                success: false,
+                message: "Unauthorized",
+                data: null,
+                error: "No user profile found",
+            })
+        }
+
+        // Get tutor profile ID from database
+        const tutorProfile = await prisma.tutorProfile.findUnique({
+            where: { userProfileId },
+            select: { id: true }
+        })
+
+        if (!tutorProfile) {
+            return res.status(403).json({
+                success: false,
+                message: "Only tutors can respond to reviews",
+                data: null,
+                error: "User is not a tutor",
+            })
+        }
+
+        const reviewId = req.params.id as string
+
+        const { response } = req.body
+
+        if (!response || response.trim() === "") {
+            return res.status(400).json({
+                success: false,
+                message: "Response cannot be empty",
+                data: null,
+                error: null,
+            })
+        }
+
+        const updatedReview = await reviewService.replyToReview({
+            reviewId,
+            tutorProfileId,
+            response,
+        })
+
+        res.status(200).json({
+            success: true,
+            message: "Review responded successfully",
+            data: updatedReview,
+            error: null,
+        })
+    } catch (error: any) {
+        res.status(500).json({
+            success: false,
+            message: error.message || "Something went wrong",
+            data: null,
+            error,
+        })
+    }
+}
+
+
+
+export const reviewController = { replyToReviewController, getTutorReviewsController, createReviewController }

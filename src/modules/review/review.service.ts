@@ -1,6 +1,6 @@
 import { BookingStatus } from "../../../generated/prisma/enums"
 import { prisma } from "../../lib/prisma"
-import { CreateReviewInput, GetTutorReviewsInput } from "./review.types"
+import { CreateReviewInput, GetTutorReviewsInput, ReplyToReviewInput } from "./review.types"
 
 const createReview = async ({
     bookingId,
@@ -197,6 +197,37 @@ const getTutorReviews = async ({
 }
 
 
+const replyToReview = async ({
+    reviewId,
+    tutorProfileId,
+    response,
+}: ReplyToReviewInput) => {
+    // Check review exists and belongs to tutor
+    const review = await prisma.review.findUnique({
+        where: { id: reviewId },
+    })
+
+    if (!review) {
+        throw new Error("Review not found")
+    }
+
+    if (review.tutorProfileId !== tutorProfileId) {
+        throw new Error("You are not authorized to respond to this review")
+    }
+
+    // Update review with tutor response
+    const updatedReview = await prisma.review.update({
+        where: { id: reviewId },
+        data: {
+            tutorResponse: response,
+            respondedAt: new Date(),
+        },
+    })
+
+    return updatedReview
+}
 
 
-export const reviewService = { createReview, getTutorReviews }
+
+
+export const reviewService = { createReview, getTutorReviews, replyToReview }

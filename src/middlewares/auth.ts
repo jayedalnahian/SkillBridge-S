@@ -24,6 +24,7 @@ declare global {
                 status: UserStatus
                 emailVerified: boolean
                 userProfileId: string
+                tutorProfileId?: string | undefined
             }
         }
     }
@@ -45,9 +46,14 @@ const auth = (...roles: UserRole[]) => {
                 })
             }
 
-            // Fetch user profile
+            // Fetch user profile with tutor profile if exists
             const userProfile = await prisma.userProfile.findUnique({
                 where: { userId: session.user.id },
+                include: {
+                    tutorProfile: {
+                        select: { id: true }
+                    }
+                }
             })
 
             if (!userProfile) {
@@ -82,9 +88,10 @@ const auth = (...roles: UserRole[]) => {
                 email: session.user.email,
                 name: session.user.name,
                 role: userProfile.role as UserRole,
-                status: userProfile.status as UserStatus, // ✅ cast here
+                status: userProfile.status as UserStatus,
                 emailVerified: session.user.emailVerified,
-                userProfileId: userProfile.id
+                userProfileId: userProfile.id,
+                tutorProfileId: userProfile.tutorProfile?.id  // Add tutor profile ID
             }
 
             next()
