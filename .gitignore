@@ -1,0 +1,11 @@
+.env
+node_modules
+.next
+out
+dist
+.DS_Store
+*.log
+.turbo
+.wrangler
+.yarn
+.pnp.*
