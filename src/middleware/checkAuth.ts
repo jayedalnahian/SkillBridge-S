@@ -1,16 +1,15 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextFunction, Request, Response } from "express";
 import status from "http-status";
-
+import { UserRole, UserStatus } from '../generated/prisma/enums';
 import { envVars } from "../config/env";
-import AppError from "../errorHalpers/AppError"; 
+import AppError from "../errorHalpers/AppError";
 import { prisma } from "../app/lib/prisma";
 import { cookieUtils } from "../app/utils/cookie";
 import { jwtUtils } from "../app/utils/jwt";
 
 
-
-export const checkAuth = (...authRoles: string[]) => async (req: Request, res: Response, next: NextFunction) => {
+export const checkAuth = (...authRoles: UserRole[]) => async (req: Request, res: Response, next: NextFunction) => {
     try {
         //Session Token Verification
         const sessionToken = cookieUtils.getCookie(req, "better_auth.session_token");
@@ -56,9 +55,9 @@ export const checkAuth = (...authRoles: string[]) => async (req: Request, res: R
                     console.log("Session Expiring Soon!!");
                 }
 
-                // if (user.status === UserStatus.BLOCKED || user.status === UserStatus.DELETED) {
-                //     throw new AppError(status.UNAUTHORIZED, 'Unauthorized access! User is not active.');
-                // }
+                if (user.status === UserStatus.BLOCKED || user.status === UserStatus.DELETED) {
+                    throw new AppError(status.UNAUTHORIZED, 'Unauthorized access! User is not active.');
+                }
 
                 if (user.isDeleted) {
                     throw new AppError(status.UNAUTHORIZED, 'Unauthorized access! User is deleted.');
@@ -103,7 +102,7 @@ export const checkAuth = (...authRoles: string[]) => async (req: Request, res: R
             throw new AppError(status.UNAUTHORIZED, 'Unauthorized access! Invalid access token.');
         }
 
-        if (authRoles.length > 0 && !authRoles.includes(verifiedToken.data!.role as string)) {
+        if (authRoles.length > 0 && !authRoles.includes(verifiedToken.data!.role as Role)) {
             throw new AppError(status.FORBIDDEN, 'Forbidden access! You do not have permission to access this resource.');
         }
         next()

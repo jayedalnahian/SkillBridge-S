@@ -1,0 +1,31 @@
+model Tutor {
+    id                    String       @id @default(ulid())
+    userId                String       @unique
+    name                  String
+    email                 String       @unique
+    profilePhoto          String
+    contactNumber         String
+    availabilityStartTime DateTime
+    availabilityEndTime   DateTime
+    availableDays         DaysOfWeek[]
+    experienceYears       Int
+    educationLevel        String
+    hourlyRate            Float
+    designation           String
+    isDeleted             Boolean      @default(false)
+    deletedAt             DateTime?
+    createdAt             DateTime     @default(now())
+    updatedAt             DateTime     @updatedAt
+
+    //relations
+    User            User          @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+    tutorCategory   tutorCategory @relation(fields: [tutorCategoryId], references: [id])
+    tutorCategoryId String
+    bookings        Booking[]
+    reviews         Review[]
+
+
+    @@map("tutor")
+    @@index([userId], name: "tutor_user_id_idx")
+    @@index([isDeleted], name: "tutor_is_deleted_idx")
+}

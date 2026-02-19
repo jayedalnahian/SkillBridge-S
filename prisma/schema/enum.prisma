@@ -1,0 +1,29 @@
+
+
+enum UserStatus {
+    ACTIVE
+    BANNED
+}
+enum UserRole {
+    STUDENT
+    TUTOR
+    ADMIN
+}
+
+
+enum DaysOfWeek {
+    MONDAY
+    TUESDAY
+    WEDNESDAY
+    THURSDAY
+    FRIDAY
+    SATURDAY
+    SUNDAY
+}
+
+enum BookingStatus {
+    PENDING
+    ACCEPTED
+    REJECTED
+    COMPLETED
+}

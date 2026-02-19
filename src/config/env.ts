@@ -1,17 +1,20 @@
-import dotenv from "dotenv";
+// import dotenv from "dotenv";
 
 import status from "http-status";
 import AppError from "../errorHalpers/AppError";
 
 
-dotenv.config();
+// dotenv.config();
 
 interface EnvConfig {
     PORT: string;
-    NODE_ENV: string;
     DATABASE_URL: string;
-    ACCESS_TOKEN_SECRET: string;
-    REFRESH_TOKEN_SECRET: string;
+    BETTER_AUTH_SECRET: string;
+    BETTER_AUTH_URL: string;
+    CLOUDINARY_CLOUD_NAME: string;
+    CLOUDINARY_API_KEY: string;
+    CLOUDINARY_API_SECRET: string;
+    NODE_ENV: string;
 }
 
 
@@ -19,8 +22,12 @@ const loadEnvVariables = (): EnvConfig => {
     const requireEnvVariable = [
         "PORT",
         "DATABASE_URL",
-        "ACCESS_TOKEN_SECRET",
-        "REFRESH_TOKEN_SECRET"
+        "BETTER_AUTH_SECRET",
+        "BETTER_AUTH_URL",
+        "CLOUDINARY_CLOUD_NAME",
+        "CLOUDINARY_API_KEY",
+        "CLOUDINARY_API_SECRET",
+        "NODE_ENV"
     ]
 
     requireEnvVariable.forEach((veriable) => {
@@ -30,10 +37,13 @@ const loadEnvVariables = (): EnvConfig => {
     })
     return {
         PORT: process.env.PORT as string,
-        NODE_ENV: process.env.NODE_ENV as string,
         DATABASE_URL: process.env.DATABASE_URL as string,
-        ACCESS_TOKEN_SECRET: process.env.ACCESS_TOKEN_SECRET as string,
-        REFRESH_TOKEN_SECRET: process.env.REFRESH_TOKEN_SECRET as string
+        BETTER_AUTH_SECRET: process.env.BETTER_AUTH_SECRET as string,
+        BETTER_AUTH_URL: process.env.BETTER_AUTH_URL as string,
+        CLOUDINARY_CLOUD_NAME: process.env.CLOUDINARY_CLOUD_NAME as string,
+        CLOUDINARY_API_KEY: process.env.CLOUDINARY_API_KEY as string,
+        CLOUDINARY_API_SECRET: process.env.CLOUDINARY_API_SECRET as string,
+        NODE_ENV: process.env.NODE_ENV as string
     }
 }
 
