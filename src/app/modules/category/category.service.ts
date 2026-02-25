@@ -1,7 +1,34 @@
-import { CategoryCreateInput } from "../../../generated/prisma/models"
 
-const createCategory = async (payload: Partial<CategoryCreateInput>, image: string) => {
+import status from "http-status";
+import { prisma } from "../../lib/prisma"
+import AppError from "../../../errorHalpers/AppError";
 
+
+
+export interface ICategoryCreateInput {
+    name: string;
+    slug: string;
+    description: string;
+    image: string;
+}
+
+
+
+
+const createCategory = async (payload: ICategoryCreateInput, image: string) => {
+    const result = await prisma.category.create({
+        data: {
+            ...payload,
+            image
+        }
+    })
+    return result
+}
+
+
+const getAllCategories = async () => {
+    const result = await prisma.category.findMany()
+    return result
 }
 
 
@@ -9,4 +36,32 @@ const createCategory = async (payload: Partial<CategoryCreateInput>, image: stri
 
 
 
-export const CategoryService = {createCategory}
+const deleteCategory = async (id: string) => {
+    const isCategoryUsed = await prisma.tutor.findMany({
+        where: {
+            tutorCategory: {
+                some: {
+                    categoryId: id
+                }
+            }
+        }
+    })
+    if (isCategoryUsed) {
+        throw new AppError(status.BAD_REQUEST, "Category is in use by a tutor")
+    }
+    const result = await prisma.category.delete({
+        where: {
+            id
+        }
+    })
+    return result
+}
+
+
+
+
+export const CategoryService = {
+    createCategory,
+    getAllCategories,
+    deleteCategory
+}

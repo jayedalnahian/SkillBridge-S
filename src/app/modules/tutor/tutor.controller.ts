@@ -4,8 +4,9 @@ import { catchAsync } from "../../../shared/catchAsync"
 import { Request, Response } from "express"
 import { TutorService } from "./tutor.service"
 import { IQueryParams } from "../../interface/query.interface"
-import { ITutorPayload } from "./tutor.type"
+import { ITutorPayload, ITutorUpdatePayload } from "./tutor.type"
 import AppError from "../../../errorHalpers/AppError"
+import { UserRole } from "../../../generated/prisma/enums"
 
 
 const getAllTutors = catchAsync(async (req: Request, res: Response) => {
@@ -45,8 +46,25 @@ const createTutor = catchAsync(async (req: Request, res: Response) => {
     })
 })
 
+const updateTutor = catchAsync(async (req: Request, res: Response) => {
+    const userRole = req.user?.role as UserRole
+    const tutorId = req.params.id as string
+    const userId = req.user?.userId as string
+
+
+    const result = await TutorService.updateTutor(tutorId,userId, req.body as ITutorUpdatePayload, userRole)
+    sendResponse(res, {
+        statusCode: status.OK,
+        success: true,
+        message: "Tutor updated successfully",
+        data: result,
+        error: null,
+    })
+})
+
 export const TutorController = {
     getAllTutors,
     getSingleTutor,
-    createTutor
+    createTutor,
+    updateTutor
 }

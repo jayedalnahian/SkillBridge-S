@@ -40,16 +40,18 @@ export const globalErrorHandler = async (err: any, req: Request, res: Response, 
         statusCode = simplifiedError.statusCode as number
         message = simplifiedError.message
         errorSources = [...simplifiedError.errorSources]
-    } else if (
-        err instanceof PrismaClientKnownRequestError ||
-        err instanceof PrismaClientValidationError
-    ) {
-        const simplifiedError = handlePrismaError(err);
+    }
+    // else if (
+    //     err instanceof PrismaClientKnownRequestError ||
+    //     err instanceof PrismaClientValidationError
+    // ) {
+    //     const simplifiedError = handlePrismaError(err);
 
-        statusCode = simplifiedError.statusCode;
-        message = simplifiedError.message;
-        errorSources = simplifiedError.errorSources;
-    } else if (err instanceof AppError) {
+    //     statusCode = simplifiedError.statusCode;
+    //     message = simplifiedError.message;
+    //     errorSources = simplifiedError.errorSources;
+    // } 
+    else if (err instanceof AppError) {
         statusCode = err.statusCode;
         message = err.message;
         stack = err.stack

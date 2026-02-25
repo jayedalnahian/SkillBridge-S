@@ -1,6 +1,6 @@
-import { Prisma } from "../../../generated/prisma/client"
+import { Prisma } from "../../../generated/prisma/client";
 
-// Fields that support text search (used with searchTerm query param)
+// Searchable fields
 export const tutorSearchableFields = [
     "name",
     "email",
@@ -9,9 +9,10 @@ export const tutorSearchableFields = [
     "contactNumber",
     "User.name",
     "User.email",
-]
+    "tutorCategory.Category.name", // ✅ relation search
+];
 
-// Fields that can be used as exact/range filters in query params
+// Filterable fields
 export const tutorFilterableFields = [
     "name",
     "email",
@@ -19,15 +20,19 @@ export const tutorFilterableFields = [
     "educationLevel",
     "hourlyRate",
     "designation",
-    "tutorCategoryId",
-    "availableDays",
-]
+    "availableDays", // enum array
+    "tutorCategory.Category.name", // category filter
+];
 
-// Relations that can be dynamically included via ?include=reviews,bookings
-// Relations that can be dynamically included via ?include=reviews,bookings
+// Safe dynamic include config
 export const tutorIncludeConfig: Prisma.TutorInclude = {
     User: true,
     reviews: true,
     bookings: true,
-    tutorCategory: true,
-}       
+
+    tutorCategory: {
+        include: {
+            Category: true,
+        },
+    },
+};

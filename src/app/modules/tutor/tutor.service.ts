@@ -5,34 +5,32 @@ import { IQueryParams } from "../../interface/query.interface"
 import { prisma } from "../../lib/prisma"
 import { QueryBuilder } from "../../utils/QueryBuilder"
 import { tutorFilterableFields, tutorIncludeConfig, tutorSearchableFields } from "./tutor.constent"
-import { ITutorPayload } from "./tutor.type"
+import { ITutorPayload, ITutorUpdatePayload } from "./tutor.type"
 import { auth } from "../../lib/auth"
 
 
 const getAllTutors = async (query: IQueryParams) => {
-    const queryBuilder = new QueryBuilder<Tutor, Prisma.TutorWhereInput, Prisma.TutorInclude>(
-        prisma.tutor,
-        query,
-        {
-            searchableFields: tutorSearchableFields,
-            filterableFields: tutorFilterableFields
-        }
-    )
+    const queryBuilder = new QueryBuilder<
+        Tutor,
+        Prisma.TutorWhereInput,
+        Prisma.TutorInclude
+    >(prisma.tutor, query, {
+        searchableFields: tutorSearchableFields,
+        filterableFields: tutorFilterableFields,
+    });
 
     const result = await queryBuilder
         .search()
         .filter()
-        .where({
-            isDeleted: false
-        })
-        .dynamicInclude(tutorIncludeConfig)
+        .where({ isDeleted: false }) // soft delete protection
+        .sort()
         .paginate()
         .fields()
-        .sort()
-        .execute()
+        .dynamicInclude(tutorIncludeConfig)
+        .execute();
 
-    return result
-}
+    return result;
+};
 
 
 const getSingleTutor = async (id: string) => {
@@ -79,19 +77,27 @@ const createTutor = async (payload: ITutorPayload, profilePhoto: string) => {
             name: payload.tutor.name,
             password: payload.password,
             role: UserRole.TUTOR,
+            image: profilePhoto
         }
     })
+
+
+
 
     try {
         const result = await prisma.$transaction(async (tx) => {
             const { availabilityStartTime, availabilityEndTime, ...otherTutorData } = payload.tutor;
+            const today = new Date().toISOString().split("T")[0]; // "2026-02-25"
+
+            const startDateTime = new Date(`${today}T${availabilityStartTime}:00`);
+            const endDateTime = new Date(`${today}T${availabilityEndTime}:00`);
             const tutorData = await tx.tutor.create({
                 data: {
                     ...otherTutorData,
                     userId: userData.user.id,
                     profilePhoto: profilePhoto,
-                    availabilityStartTime: new Date(availabilityStartTime),
-                    availabilityEndTime: new Date(availabilityEndTime)
+                    availabilityStartTime: startDateTime,
+                    availabilityEndTime: endDateTime,
                 }
             })
 
@@ -174,4 +180,42 @@ const createTutor = async (payload: ITutorPayload, profilePhoto: string) => {
 }
 
 
-export const TutorService = { getAllTutors, getSingleTutor, createTutor }
+const updateTutor = async (tutorId: string, userId: string, payload: ITutorUpdatePayload, role: UserRole) => {
+
+    const tutor = await prisma.tutor.findUnique({
+        where: {
+            id: tutorId
+        },
+        include: {
+            User: true
+        }
+    })
+
+    if (!tutor) {
+        throw new AppError(status.NOT_FOUND, "Tutor not found.")
+    }
+
+    if (tutor.User.id !== userId ||role !== UserRole.ADMIN) {
+        throw new AppError(status.FORBIDDEN, "You are not authorized to update tutor's profile.")
+    }
+
+    if (payload.hourlyRate && role !== UserRole.ADMIN) {
+        throw new AppError(status.FORBIDDEN, "You are not authorized to update tutor's hourly rate.")
+    }
+
+    if (payload.hourlyRate && payload.hourlyRate < 0) {
+        throw new AppError(status.BAD_REQUEST, "Hourly rate must be a positive number.")
+    }
+
+    const result = await prisma.tutor.update({
+        where: {
+            id: tutorId
+        },
+        data: payload
+    })
+
+    return result
+}
+
+
+export const TutorService = { getAllTutors, getSingleTutor, createTutor, updateTutor }

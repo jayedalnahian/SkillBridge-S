@@ -28,10 +28,36 @@ const createCategory = catchAsync(async (req: Request, res: Response) => {
 })
 
 
+const getAllCategories = catchAsync(async (req: Request, res: Response) => {
+    const result = await CategoryService.getAllCategories()
+    sendResponse(res, {
+        statusCode: status.OK,
+        success: true,
+        message: "Categories fetched successfully",
+        data: result,
+        error: null,
+    })
+})
+
+const deleteCategory = catchAsync(async (req: Request, res: Response) => {
+    const { id } = req.params
+    const result = await CategoryService.deleteCategory(id as string)
+    sendResponse(res, {
+        statusCode: status.OK,
+        success: true,
+        message: "Category deleted successfully",
+        data: result,
+        error: null,
+    })
+})
+
+
 
 
 
 
 export const CategoryController = {
-    createCategory
+    createCategory,
+    getAllCategories,
+    deleteCategory
 }
