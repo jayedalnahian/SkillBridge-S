@@ -1,7 +1,7 @@
 import { Response } from "express"
 
 interface IResponseData<T, E> {
-    httpStatusCode: number;
+    statusCode : number;
     success: boolean;
     message: string;
     data?: T;
@@ -15,8 +15,8 @@ interface IResponseData<T, E> {
 
 
 export const sendResponse = <T, E>(res: Response, responseData: IResponseData<T, E>) => {
-    const { httpStatusCode, success, message, data, error, meta } = responseData
-    res.status(httpStatusCode).json({
+    const { statusCode, success, message, data, error, meta } = responseData
+    res.status(statusCode).json({
         success,
         message,
         data,

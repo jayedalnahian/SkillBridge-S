@@ -8,22 +8,23 @@ model Category {
     deletedAt        DateTime?
     createdAt        DateTime         @default(now())
     updatedAt        DateTime         @updatedAt
-    tutorCategories tutorCategory[]
+    tutorCategories TutorCategory[]
 
     @@index([isDeleted], name: "category_is_deleted_idx")
     @@map("category")
 }
 
-model tutorCategory {
+model TutorCategory {
     id         String   @id @default(ulid())
-    name       String   @unique
     categoryId String
-    createdAt  DateTime @default(now())
-    updatedAt  DateTime @updatedAt
+    tutorId String @unique
 
     //relations
     Category Category @relation(fields: [categoryId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-    Tutor Tutor[]
+    Tutor Tutor @relation(fields: [tutorId], references: [id], onDelete: Cascade, onUpdate: Cascade)
 
     @@map("tutor_category")
+    @@unique([tutorId, categoryId])
+    @@index([tutorId], name: "tutor_category_tutor_id_idx")
+    @@index([categoryId], name: "tutor_category_category_id_idx")
 }

@@ -1,8 +1,10 @@
 import express, { Application, Request, Response } from "express";
+import cookieParser from "cookie-parser";
 import { notFound } from "./middleware/notFound";
 import { globalErrorHandler } from "./middleware/globalErrorHandler";
 import { toNodeHandler } from "better-auth/node";
 import { auth } from "./app/lib/auth";
+import { IndexRouter } from "./app/router/Index.Router";
 
 
 
@@ -12,13 +14,20 @@ import { auth } from "./app/lib/auth";
 
 
 const app: Application = express();
-app.use("/api/auth/*split", toNodeHandler(auth))
+
+
+// Parse cookies
+app.use(cookieParser());
 
 // Enable URL-encoded form data parsing
 app.use(express.urlencoded({ extended: true }));
 
 // Middleware to parse JSON bodies
 app.use(express.json());
+app.use("/api/auth/*split", toNodeHandler(auth))
+
+app.use("/api/v1", IndexRouter);
+
 
 // Basic route
 app.get('/', async (req: Request, res: Response) => {

@@ -1,10 +1,10 @@
-// import dotenv from "dotenv";
+import dotenv from "dotenv";
 
 import status from "http-status";
 import AppError from "../errorHalpers/AppError";
 
 
-// dotenv.config();
+dotenv.config();
 
 interface EnvConfig {
     PORT: string;
@@ -15,6 +15,7 @@ interface EnvConfig {
     CLOUDINARY_API_KEY: string;
     CLOUDINARY_API_SECRET: string;
     NODE_ENV: string;
+    FRONTEND_URL: string;
 }
 
 
@@ -27,7 +28,8 @@ const loadEnvVariables = (): EnvConfig => {
         "CLOUDINARY_CLOUD_NAME",
         "CLOUDINARY_API_KEY",
         "CLOUDINARY_API_SECRET",
-        "NODE_ENV"
+        "NODE_ENV",
+        "FRONTEND_URL"
     ]
 
     requireEnvVariable.forEach((veriable) => {
@@ -43,7 +45,8 @@ const loadEnvVariables = (): EnvConfig => {
         CLOUDINARY_CLOUD_NAME: process.env.CLOUDINARY_CLOUD_NAME as string,
         CLOUDINARY_API_KEY: process.env.CLOUDINARY_API_KEY as string,
         CLOUDINARY_API_SECRET: process.env.CLOUDINARY_API_SECRET as string,
-        NODE_ENV: process.env.NODE_ENV as string
+        NODE_ENV: process.env.NODE_ENV as string,
+        FRONTEND_URL: process.env.FRONTEND_URL as string
     }
 }
 

@@ -8,6 +8,7 @@ model Tutor {
     availabilityStartTime DateTime
     availabilityEndTime   DateTime
     availableDays         DaysOfWeek[]
+    status                TutorStatus   @default(ACTIVE)
     experienceYears       Int
     educationLevel        String
     hourlyRate            Float
@@ -19,8 +20,8 @@ model Tutor {
 
     //relations
     User            User          @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-    tutorCategory   tutorCategory @relation(fields: [tutorCategoryId], references: [id])
-    tutorCategoryId String
+    tutorCategory   TutorCategory[]
+    
     bookings        Booking[]
     reviews         Review[]
 

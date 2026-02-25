@@ -27,3 +27,9 @@ enum BookingStatus {
     REJECTED
     COMPLETED
 }
+
+enum TutorStatus {
+    ACTIVE
+    INACTIVE
+    BANNED
+}
