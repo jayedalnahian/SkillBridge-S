@@ -52,6 +52,21 @@ const deleteCategory = catchAsync(async (req: Request, res: Response) => {
 })
 
 
+const updateCategory = catchAsync(async (req: Request, res: Response) => {
+    const { id } = req.params
+    const payload = req.body
+    const image = req.file?.path
+    const result = await CategoryService.updateCategory(id as string, payload, image as string)
+    sendResponse(res, {
+        statusCode: status.OK,
+        success: true,
+        message: "Category updated successfully",
+        data: result,
+        error: null,
+    })
+})
+
+
 
 
 
@@ -59,5 +74,6 @@ const deleteCategory = catchAsync(async (req: Request, res: Response) => {
 export const CategoryController = {
     createCategory,
     getAllCategories,
-    deleteCategory
+    deleteCategory,
+    updateCategory
 }

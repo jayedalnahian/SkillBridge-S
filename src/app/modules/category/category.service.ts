@@ -57,11 +57,42 @@ const deleteCategory = async (id: string) => {
     return result
 }
 
+const updateCategory = async (id: string, payload: ICategoryCreateInput, image: string) => {
+    await prisma.category.findFirstOrThrow({
+        where: {
+            id
+        }
+    })
+    const isCategoryUsed = await prisma.tutor.findFirstOrThrow({
+        where: {
+            tutorCategory: {
+                some: {
+                    categoryId: id
+                }
+            }
+        }
+    })
+    if (isCategoryUsed) {
+        throw new AppError(status.BAD_REQUEST, "Category is in use by a tutor")
+    }
+    const result = await prisma.category.update({
+        where: {
+            id
+        },
+        data: {
+            ...payload,
+            image
+        }
+    })
+    return result
+}
+
 
 
 
 export const CategoryService = {
     createCategory,
     getAllCategories,
-    deleteCategory
+    deleteCategory,
+    updateCategory
 }

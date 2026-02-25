@@ -11,6 +11,7 @@ const router = Router()
 router.post('/', multerUpload.single("file"), checkAuth(UserRole.ADMIN), validateReauest(createCategorySchema), CategoryController.createCategory)
 router.get('/', CategoryController.getAllCategories)
 router.delete('/:id', checkAuth(UserRole.ADMIN), CategoryController.deleteCategory)
+router.patch('/:id', multerUpload.single("file"), checkAuth(UserRole.ADMIN), validateReauest(createCategorySchema), CategoryController.updateCategory)
 
 
 
