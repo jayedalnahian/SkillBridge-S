@@ -1,5 +1,4 @@
 
-import { Prisma } from "@prisma/client/extension";
 import { PrismaClientKnownRequestError, PrismaClientValidationError } from "@prisma/client/runtime/client";
 import status from "http-status";
 import { TErrorSources } from "../app/interface/error.interface";
