@@ -4,6 +4,7 @@ import {
   forgetPasswordSchema,
   loginUserSchema,
   registerUserSchema,
+  resendOTPSchema,
   resetPasswordSchema,
   verifyEmailSchema,
 } from "./auth.validation";
@@ -53,6 +54,11 @@ router.post(
   "/verify-email",
   validateRequest(verifyEmailSchema),
   AuthController.verifyEmail,
+);
+router.post(
+  "/resend-otp",
+  validateRequest(resendOTPSchema),
+  AuthController.resendVerificationOTP,
 );
 router.post(
   "/forget-password",

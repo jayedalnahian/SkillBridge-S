@@ -171,6 +171,20 @@ const verifyEmail = catchAsync(
     }
 )
 
+const resendVerificationOTP = catchAsync(
+  async (req: Request, res: Response) => {
+  const { email } = req.body;
+  await AuthService.resendVerificationOTP(email);
+
+  sendResponse(res, {
+    statusCode: status.OK,
+    success: true,
+    message: "Verification OTP resent to email successfully",
+    data: null,
+    error: null,
+  });
+});
+
 
 const forgetPassword = catchAsync(
     async (req: Request, res: Response) => {
@@ -264,17 +278,20 @@ const handleOAuthError = catchAsync((req: Request, res: Response) => {
     res.redirect(`${envVars.FRONTEND_URL}/login?error=${error}`);
 })
 
+
+
 export const AuthController = {
-   registerUser,
-    loginUser,
-    getMe,
-    getNewToken,
-    changePassword,
-    logoutUser,
-    verifyEmail,
-    forgetPassword,
-    resetPassword,
-    googleLogin,
-    googleLoginSuccess,
-    handleOAuthError,
+  registerUser,
+  loginUser,
+  getMe,
+  getNewToken,
+  changePassword,
+  logoutUser,
+  verifyEmail,
+  forgetPassword,
+  resetPassword,
+  googleLogin,
+  googleLoginSuccess,
+  handleOAuthError,
+  resendVerificationOTP,
 };

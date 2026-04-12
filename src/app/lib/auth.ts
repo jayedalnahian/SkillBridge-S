@@ -122,6 +122,7 @@ export const auth = betterAuth({
           if (!user.emailVerified) {
             console.log(`[auth.ts] Sending verification email to ${email}...`);
             try {
+              console.log(`[auth.ts] Attempting to send email via nodemailer to: ${email}`);
               await sendEmail({
                 to: email,
                 subject: "Verify your email",
@@ -131,10 +132,10 @@ export const auth = betterAuth({
                   otp,
                 },
               });
-              console.log(`[auth.ts] Verification email sent to ${email}`);
+              console.log(`[auth.ts] Verification email sent SUCCESFULLY to ${email}`);
             } catch (error: any) {
               console.error(
-                `[auth.ts] Failed to send verification email to ${email}:`,
+                `[auth.ts] FAILED to send verification email to ${email}:`,
                 error.message,
               );
             }
