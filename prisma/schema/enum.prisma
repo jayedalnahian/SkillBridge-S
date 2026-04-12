@@ -33,3 +33,9 @@ enum TutorStatus {
     INACTIVE
     BANNED
 }
+
+
+enum PaymentStatus {
+  PAID
+  UNPAID
+}

@@ -1,27 +1,29 @@
-import { Router } from "express"
-import { TutorController } from "./tutor.controller"
-import { checkAuth } from "../../../middleware/checkAuth"
-import { UserRole } from "../../../generated/prisma/enums"
-import { validateReauest } from "../../../middleware/validateRequest"
-import { createTutorSchema, updateTutorSchema } from "./tutor.validate"
-import { multerUpload } from "../../../config/multer.config"
+import { Router } from "express";
+import { TutorController } from "./tutor.controller";
+import { checkAuth } from "../../middleware/checkAuth";
+import { UserRole } from "../../generated/prisma";
+
+import { createTutorSchema, updateTutorSchema } from "./tutor.validate";
+import { multerUpload } from "../../config/multer.config";
+import { validateRequest } from "../../middleware/validateRequest";
 
 
+const router = Router();
 
+router.get("/", TutorController.getAllTutors);
+router.get("/:id", TutorController.getSingleTutor);
+router.post(
+  "/",
+  multerUpload.single("file"),
+  // checkAuth(UserRole.ADMIN),
+  validateRequest(createTutorSchema),
+  TutorController.createTutor,
+);
+router.patch(
+  "/:id",
+  checkAuth(UserRole.ADMIN, UserRole.TUTOR),
+  validateRequest(updateTutorSchema),
+  TutorController.updateTutor,
+);
 
-
-
-const router = Router()
-
-
-router.get("/", TutorController.getAllTutors)
-router.get("/:id", TutorController.getSingleTutor)
-router.post("/", multerUpload.single("file"), checkAuth(UserRole.ADMIN), validateReauest(createTutorSchema), TutorController.createTutor)
-router.patch("/:id", checkAuth(UserRole.ADMIN, UserRole.TUTOR), validateReauest(updateTutorSchema), TutorController.updateTutor)
-
-
-
-
-
-
-export const TutorRouter = router
+export const TutorRouter = router;

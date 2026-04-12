@@ -1,7 +1,7 @@
 
 import status from "http-status";
 import { prisma } from "../../lib/prisma"
-import AppError from "../../../errorHalpers/AppError";
+import AppError from "../../errorHalpers/AppError";
 
 
 

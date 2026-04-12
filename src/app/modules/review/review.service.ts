@@ -1,5 +1,5 @@
 import status from "http-status";
-import AppError from "../../../errorHalpers/AppError";
+import AppError from "../../errorHalpers/AppError";
 import { prisma } from "../../lib/prisma";
 import { IRequestUser } from "../../interface/requestUser.interface";
 import { ICreateReviewPayload, IReviewQueryParams } from "./review.type";

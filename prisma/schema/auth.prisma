@@ -1,21 +1,21 @@
 model User {
-  id            String     @id
-  name          String
-  email         String
-  emailVerified Boolean    @default(false)
-  image         String?
-  role          UserRole   @default(STUDENT)
-  status        UserStatus @default(ACTIVE)
-  isDeleted     Boolean    @default(false)
-  deletedAt     DateTime?
-  createdAt     DateTime   @default(now())
-  updatedAt     DateTime   @updatedAt
-  sessions      Session[]
-  accounts      Account[]
-  tutor         Tutor?
-  admin         Admin?
-  bookings      Booking[]
-  reviews       Review[]
+  id                 String     @id
+  name               String
+  email              String
+  emailVerified      Boolean    @default(false)
+  image              String?
+  role               UserRole   @default(STUDENT)
+  status             UserStatus @default(ACTIVE)
+  needPasswordChange Boolean    @default(false)
+  isDeleted          Boolean    @default(false)
+  deletedAt          DateTime?
+  createdAt          DateTime   @default(now())
+  updatedAt          DateTime   @updatedAt
+  sessions           Session[]
+  accounts           Account[]
+  tutor              Tutor?
+  admin              Admin?
+  student            Student?
 
   @@unique([email])
   @@map("user")

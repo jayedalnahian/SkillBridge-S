@@ -1,16 +1,72 @@
-import { Router } from "express"
-import { multerUpload } from "../../../config/multer.config"
-import { validateReauest } from "../../../middleware/validateRequest"
-import { loginUserSchema, registerUserSchema } from "./auth.validation"
-import { AuthController } from "./auth.controller"
-import { checkAuth } from "../../../middleware/checkAuth"
-import { UserRole } from "../../../generated/prisma/enums"
+import { Router } from "express";
 
-const router = Router()
+import {
+  forgetPasswordSchema,
+  loginUserSchema,
+  registerUserSchema,
+  resetPasswordSchema,
+  verifyEmailSchema,
+} from "./auth.validation";
+import { AuthController } from "./auth.controller";
+import { checkAuth } from "../../middleware/checkAuth";
+import { UserRole } from "../../generated/prisma";
+import { multerUpload } from "../../config/multer.config";
+import { validateRequest } from "../../middleware/validateRequest";
 
-router.post('/register', multerUpload.single("file"), validateReauest(registerUserSchema), AuthController.registerUser);
-router.post('/login', validateReauest(loginUserSchema), AuthController.loginUser);
-router.post("/logout", checkAuth(UserRole.STUDENT, UserRole.TUTOR, UserRole.ADMIN), AuthController.logoutUser)
-router.get("/me", checkAuth(UserRole.STUDENT, UserRole.TUTOR, UserRole.ADMIN), AuthController.getMe)
+const router = Router();
 
-export const AuthRouter = router
+router.post(
+  "/register",
+  multerUpload.single("file"),
+  validateRequest(registerUserSchema),
+  AuthController.registerUser,
+);
+router.post(
+  "/login",
+  validateRequest(loginUserSchema),
+  AuthController.loginUser,
+);
+router.post(
+  "/logout",
+  checkAuth(UserRole.STUDENT, UserRole.TUTOR, UserRole.ADMIN),
+  AuthController.logoutUser,
+);
+
+router.post(
+  "/refresh-token",
+  AuthController.getNewToken
+);
+
+router.post(
+  "/change-password",
+  checkAuth(UserRole.STUDENT, UserRole.TUTOR, UserRole.ADMIN),
+  AuthController.changePassword,
+);
+
+router.get(
+  "/me",
+  checkAuth(UserRole.STUDENT, UserRole.TUTOR, UserRole.ADMIN),
+  AuthController.getMe,
+);
+
+router.post(
+  "/verify-email",
+  validateRequest(verifyEmailSchema),
+  AuthController.verifyEmail,
+);
+router.post(
+  "/forget-password",
+  validateRequest(forgetPasswordSchema),
+  AuthController.forgetPassword,
+);
+router.post(
+  "/reset-password",
+  validateRequest(resetPasswordSchema),
+  AuthController.resetPassword,
+);
+
+router.get("/login/google", AuthController.googleLogin);
+router.get("/google/success", AuthController.googleLoginSuccess);
+router.get("/oauth/error", AuthController.handleOAuthError);
+
+export const AuthRouter = router;

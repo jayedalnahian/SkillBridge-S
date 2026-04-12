@@ -1,19 +1,84 @@
+import { Server } from "http";
 import app from "./app";
-import { envVars } from "./config/env";
 
 
-const PORT = envVars.PORT;
+import connectDB from "./app/utils/connectDB";
+
+import { seedAdmin } from "./app/utils/seed";
+import { envVars } from "./app/config/env";
 
 
-const bootstrap = () => {
+
+let server : Server;
+const bootstrap = async() => {
     try {
-        app.listen(PORT, () => {
-            console.log(`Server is running on http://localhost:${PORT}`);
-        })
+        await connectDB()
+        await seedAdmin();
+        console.log("Ready to listen on port:", envVars.PORT);
+        server = app.listen(envVars.PORT, () => {
+            console.log(`Server is running on http://localhost:${envVars.PORT}`);
+        });
     } catch (error) {
-        console.log(`failed to start server: `, error);
-    }
+        console.error('Failed to start server:', error);
+    }   
 }
 
+// SIGTERM signal handler
+process.on("SIGTERM", () => {
+    console.log("SIGTERM signal received. Shutting down server...");
 
-bootstrap()
+    if(server){
+        server.close(() => {
+            console.log("Server closed gracefully.");
+            process.exit(1);
+        });
+    } 
+    
+    process.exit(1);
+    
+})
+
+// SIGINT signal handler
+
+process.on("SIGINT", () => {
+    console.log("SIGINT signal received. Shutting down server...");
+
+    if(server){
+        server.close(() => {
+            console.log("Server closed gracefully.");
+            process.exit(1);
+        });
+
+    }
+
+    process.exit(1);
+});
+
+//uncaught exception handler
+process.on('uncaughtException', (error) => {
+    console.log("Uncaught Exception Detected... Shutting down server", error);
+
+    if(server){
+        server.close(() => {
+            process.exit(1);
+        })
+    }
+
+    process.exit(1);
+})
+
+process.on("unhandledRejection", (error) => {
+    console.log("Unhandled Rejection Detected... Shutting down server", error);
+
+    if(server){
+        server.close(() => {
+            process.exit(1);
+        })
+    }
+
+    process.exit(1);
+})
+
+//unhandled rejection handler
+
+bootstrap();
