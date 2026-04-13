@@ -37,7 +37,6 @@ const createTutor = catchAsync(async (req: Request, res: Response) => {
 
   const result = await TutorService.createTutor(
     req.body as ITutorPayload,
-    req.file.path,
   );
   sendResponse(res, {
     statusCode: status.OK,
@@ -68,9 +67,21 @@ const updateTutor = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const deleteTutor = catchAsync(async (req: Request, res: Response) => {
+  const result = await TutorService.deleteTutor(req.params.id as string);
+  sendResponse(res, {
+    statusCode: status.OK,
+    success: true,
+    message: "Tutor deleted successfully",
+    data: result,
+    error: null,
+  });
+});
+
 export const TutorController = {
   getAllTutors,
   getSingleTutor,
   createTutor,
   updateTutor,
+  deleteTutor,
 };

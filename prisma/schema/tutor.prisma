@@ -3,7 +3,7 @@ model Tutor {
     userId                String       @unique
     name                  String
     email                 String       @unique
-    profilePhoto          String
+    profilePhoto          String?
     contactNumber         String
     availabilityStartTime DateTime
     availabilityEndTime   DateTime

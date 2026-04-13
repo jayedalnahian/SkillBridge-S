@@ -3,7 +3,6 @@ model Category {
     slug             String           @unique
     name             String           @unique
     description      String
-    image            String
     isDeleted        Boolean          @default(false)
     deletedAt        DateTime?
     createdAt        DateTime         @default(now())

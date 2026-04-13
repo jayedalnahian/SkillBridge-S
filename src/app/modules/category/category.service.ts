@@ -2,33 +2,51 @@
 import status from "http-status";
 import { prisma } from "../../lib/prisma"
 import AppError from "../../errorHalpers/AppError";
-
-
-
-export interface ICategoryCreateInput {
-    name: string;
-    slug: string;
-    description: string;
-    image: string;
-}
+import { ICategoryCreateInput } from "./category.type";
+import { IQueryParams } from "../../interface/query.interface";
+import { QueryBuilder } from "../../utils/QueryBuilder";
 
 
 
 
-const createCategory = async (payload: ICategoryCreateInput, image: string) => {
+
+
+
+
+const createCategory = async (payload: ICategoryCreateInput) => {
+    const isCategoryExist = await prisma.category.findFirst({
+        where: {
+            name: payload.name
+        }
+    })
+    if (isCategoryExist) {
+        throw new AppError(status.BAD_REQUEST, "Category already exists")
+    }
     const result = await prisma.category.create({
         data: {
             ...payload,
-            image
         }
     })
     return result
 }
 
 
-const getAllCategories = async () => {
-    const result = await prisma.category.findMany()
-    return result
+const categorySearchableFields = ['name', 'slug', 'description'];
+const categoryFilterableFields = ['name', 'isDeleted'];
+
+const getAllCategories = async (query: IQueryParams) => {
+    const categoryQuery = new QueryBuilder(prisma.category, query, {
+        searchableFields: categorySearchableFields,
+        filterableFields: categoryFilterableFields,
+    })
+        .search()
+        .filter()
+        .paginate()
+        .sort()
+        .fields();
+
+    const result = await categoryQuery.execute();
+    return result;
 }
 
 
@@ -37,33 +55,67 @@ const getAllCategories = async () => {
 
 
 const deleteCategory = async (id: string) => {
-    const isCategoryUsed = await prisma.tutor.findMany({
-        where: {
-            tutorCategory: {
-                some: {
-                    categoryId: id
+    const categoryDetail = await prisma.category.findUnique({
+        where: { id }
+    });
+
+    if (!categoryDetail) {
+        throw new AppError(status.NOT_FOUND, "Category not found");
+    }
+
+    if (!categoryDetail.isDeleted) {
+        const isCategoryUsed = await prisma.tutor.findFirst({
+            where: {
+                tutorCategory: {
+                    some: {
+                        categoryId: id
+                    }
                 }
             }
+        });
+        if (isCategoryUsed) {
+            throw new AppError(status.BAD_REQUEST, "Category is in use by a tutor");
         }
-    })
-    if (isCategoryUsed) {
-        throw new AppError(status.BAD_REQUEST, "Category is in use by a tutor")
     }
-    const result = await prisma.category.delete({
+
+    const result = await prisma.category.update({
         where: {
             id
+        },
+        data: {
+            isDeleted: !categoryDetail.isDeleted,
+            deletedAt: categoryDetail.isDeleted ? null : new Date()
         }
-    })
-    return result
+    });
+
+    return result;
 }
 
-const updateCategory = async (id: string, payload: ICategoryCreateInput, image: string) => {
-    await prisma.category.findFirstOrThrow({
+const updateCategory = async (id: string, payload: ICategoryCreateInput) => {
+    const isCategoryExist = await prisma.category.findUnique({
         where: {
             id
         }
     })
-    const isCategoryUsed = await prisma.tutor.findFirstOrThrow({
+    if (!isCategoryExist) {
+        throw new AppError(status.BAD_REQUEST, "Category not found")
+    }
+
+    if (payload.name) {
+        const nameConflict = await prisma.category.findFirst({
+            where: {
+                name: payload.name,
+                id: {
+                    not: id
+                }
+            }
+        })
+        if (nameConflict) {
+            throw new AppError(status.BAD_REQUEST, "Another category with this name already exists")
+        }
+    }
+
+    const isCategoryUsed = await prisma.tutor.findFirst({
         where: {
             tutorCategory: {
                 some: {
@@ -81,7 +133,6 @@ const updateCategory = async (id: string, payload: ICategoryCreateInput, image: 
         },
         data: {
             ...payload,
-            image
         }
     })
     return result

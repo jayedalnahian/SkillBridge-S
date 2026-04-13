@@ -6,41 +6,18 @@ import { UserRouter } from "../modules/user/user.router";
 import { BookingRouter } from "../modules/booking/booking.router";
 import { ReviewRouter } from "../modules/review/review.route";
 
+const router = Router();
 
-const router = Router()
+router.use("/auth", AuthRouter);
 
-router.use(
-    "/auth",
-    AuthRouter
-)
+router.use("/tutor", TutorRouter);
 
+router.use("/category", CategoryRouter);
 
-router.use(
-    "/tutor",
-    TutorRouter
-)
+router.use("/user", UserRouter);
 
+router.use("/booking", BookingRouter);
 
-router.use(
-    "/category",
-    CategoryRouter
-)
-
-
-router.use(
-    "/user",
-    UserRouter
-)
-
-router.use(
-    "/booking",
-    BookingRouter
-)
-
-router.use(
-    "/review",
-    ReviewRouter
-)
-
+router.use("/review", ReviewRouter);
 
 export const IndexRouter = router;

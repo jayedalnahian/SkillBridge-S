@@ -11,7 +11,6 @@ const router = Router();
 
 router.post(
   "/",
-  multerUpload.single("file"),
   checkAuth(UserRole.ADMIN),
   validateRequest(createCategorySchema),
   CategoryController.createCategory,
@@ -24,7 +23,6 @@ router.delete(
 );
 router.patch(
   "/:id",
-  multerUpload.single("file"),
   checkAuth(UserRole.ADMIN),
   validateRequest(createCategorySchema),
   CategoryController.updateCategory,

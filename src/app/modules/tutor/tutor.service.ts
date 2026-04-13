@@ -1,6 +1,7 @@
 import status from "http-status";
 import AppError from "../../errorHalpers/AppError";
 import {
+  BookingStatus,
   Category,
   Prisma,
   Tutor,
@@ -42,30 +43,47 @@ const getAllTutors = async (query: IQueryParams) => {
 
 const getSingleTutor = async (id: string) => {
   const result = await prisma.tutor.findUnique({
-    where: { id },
+    where: { id, isDeleted: false },
     include: tutorIncludeConfig,
   });
+
+  if (!result) {
+    throw new AppError(status.NOT_FOUND, "Tutor not found.");
+  }
 
   return result;
 };
 
-const createTutor = async (payload: ITutorPayload, profilePhoto: string) => {
+const createTutor = async (payload: ITutorPayload) => {
+  // Deduplicate category IDs
+  const uniqueCategoryIds = [...new Set(payload.categories)];
+
   const categories: Category[] = [];
 
-  for (const categoryId of payload.categories) {
+  for (const categoryId of uniqueCategoryIds) {
     const category = await prisma.category.findUnique({
       where: {
         id: categoryId,
+        isDeleted: false,
       },
     });
 
     if (!category) {
       throw new AppError(
         status.BAD_REQUEST,
-        `Category with id ${categoryId} not found.`,
+        `Category with id ${categoryId} not found or has been deleted.`,
       );
     }
     categories.push(category);
+  }
+
+  // Validate availability times
+  const { availabilityStartTime, availabilityEndTime } = payload.tutor;
+  if (availabilityStartTime >= availabilityEndTime) {
+    throw new AppError(
+      status.BAD_REQUEST,
+      "Availability start time must be before end time.",
+    );
   }
 
   const userExists = await prisma.user.findUnique({
@@ -87,7 +105,7 @@ const createTutor = async (payload: ITutorPayload, profilePhoto: string) => {
       name: payload.tutor.name,
       password: payload.password,
       role: UserRole.TUTOR,
-      image: profilePhoto,
+      // image: profilePhoto,
     },
   });
 
@@ -103,7 +121,6 @@ const createTutor = async (payload: ITutorPayload, profilePhoto: string) => {
         data: {
           ...otherTutorData,
           userId: userData.user.id,
-          profilePhoto: profilePhoto,
           availabilityStartTime: startDateTime,
           availabilityEndTime: endDateTime,
         },
@@ -199,21 +216,31 @@ const updateTutor = async (
     throw new AppError(status.NOT_FOUND, "Tutor not found.");
   }
 
-  if (tutor.User.id !== userId || role !== UserRole.ADMIN) {
+  // Prevent updating a soft-deleted tutor
+  if (tutor.isDeleted) {
+    throw new AppError(
+      status.BAD_REQUEST,
+      "Cannot update a deleted tutor profile.",
+    );
+  }
+
+  // Allow if the user is the tutor owner OR an admin
+  if (tutor.User.id !== userId && role !== UserRole.ADMIN) {
     throw new AppError(
       status.FORBIDDEN,
       "You are not authorized to update tutor's profile.",
     );
   }
 
-  if (payload.hourlyRate && role !== UserRole.ADMIN) {
+  // Only admins can update hourly rate
+  if (payload.hourlyRate !== undefined && role !== UserRole.ADMIN) {
     throw new AppError(
       status.FORBIDDEN,
       "You are not authorized to update tutor's hourly rate.",
     );
   }
 
-  if (payload.hourlyRate && payload.hourlyRate < 0) {
+  if (payload.hourlyRate !== undefined && payload.hourlyRate < 0) {
     throw new AppError(
       status.BAD_REQUEST,
       "Hourly rate must be a positive number.",
@@ -230,9 +257,69 @@ const updateTutor = async (
   return result;
 };
 
+const deleteTutor = async (id: string) => {
+  const tutor = await prisma.tutor.findUnique({
+    where: {
+      id,
+    },
+  });
+
+  if (!tutor) {
+    throw new AppError(status.NOT_FOUND, "Tutor not found.");
+  }
+
+  if (tutor.isDeleted) {
+    throw new AppError(status.BAD_REQUEST, "Tutor is already deleted.");
+  }
+
+  // FIX: Use `in` operator — the `||` expression always evaluates to just "ACCEPTED"
+  const tutorIsBooked = await prisma.booking.findFirst({
+    where: {
+      tutorId: id,
+      status: {
+        in: [BookingStatus.ACCEPTED, BookingStatus.PENDING],
+      },
+    },
+  });
+
+  if (tutorIsBooked) {
+    throw new AppError(
+      status.BAD_REQUEST,
+      "Tutor has active or pending bookings and cannot be deleted.",
+    );
+  }
+
+  const result = await prisma.$transaction(async (tx) => {
+    const deletedTutor = await tx.tutor.update({
+      where: {
+        id,
+      },
+      data: {
+        isDeleted: true,
+        deletedAt: new Date(),
+      },
+    });
+
+    await tx.user.update({
+      where: {
+        id: tutor.userId,
+      },
+      data: {
+        isDeleted: true,
+        deletedAt: new Date(),
+      },
+    });
+
+    return deletedTutor;
+  });
+
+  return result;
+};
+
 export const TutorService = {
   getAllTutors,
   getSingleTutor,
   createTutor,
   updateTutor,
+  deleteTutor,
 };

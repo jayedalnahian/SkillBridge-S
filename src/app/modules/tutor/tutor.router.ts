@@ -15,7 +15,7 @@ router.get("/:id", TutorController.getSingleTutor);
 router.post(
   "/",
   multerUpload.single("file"),
-  // checkAuth(UserRole.ADMIN),
+  checkAuth(UserRole.ADMIN),
   validateRequest(createTutorSchema),
   TutorController.createTutor,
 );
@@ -24,6 +24,12 @@ router.patch(
   checkAuth(UserRole.ADMIN, UserRole.TUTOR),
   validateRequest(updateTutorSchema),
   TutorController.updateTutor,
+);
+
+router.delete(
+  "/:id",
+  checkAuth(UserRole.ADMIN),
+  TutorController.deleteTutor,
 );
 
 export const TutorRouter = router;

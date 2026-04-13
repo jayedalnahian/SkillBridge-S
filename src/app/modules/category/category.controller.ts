@@ -7,13 +7,8 @@ import AppError from "../../errorHalpers/AppError";
 
 const createCategory = catchAsync(async (req: Request, res: Response) => {
   const payload = req.body;
-  const image = req.file?.path;
 
-  if (!image) {
-    throw new AppError(status.BAD_REQUEST, "Image is required");
-  }
-
-  const result = await CategoryService.createCategory(payload, image);
+  const result = await CategoryService.createCategory(payload);
   sendResponse(res, {
     statusCode: status.OK,
     success: true,
@@ -24,12 +19,13 @@ const createCategory = catchAsync(async (req: Request, res: Response) => {
 });
 
 const getAllCategories = catchAsync(async (req: Request, res: Response) => {
-  const result = await CategoryService.getAllCategories();
+  const result = await CategoryService.getAllCategories(req.query);
   sendResponse(res, {
     statusCode: status.OK,
     success: true,
     message: "Categories fetched successfully",
-    data: result,
+    data: result.data,
+    meta: result.meta,
     error: null,
   });
 });
@@ -49,11 +45,9 @@ const deleteCategory = catchAsync(async (req: Request, res: Response) => {
 const updateCategory = catchAsync(async (req: Request, res: Response) => {
   const { id } = req.params;
   const payload = req.body;
-  const image = req.file?.path;
   const result = await CategoryService.updateCategory(
     id as string,
     payload,
-    image as string,
   );
   sendResponse(res, {
     statusCode: status.OK,
