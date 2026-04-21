@@ -14,7 +14,7 @@ router.get("/", TutorController.getAllTutors);
 router.get("/:id", TutorController.getSingleTutor);
 router.post(
   "/",
-  multerUpload.single("file"),
+
   checkAuth(UserRole.ADMIN),
   validateRequest(createTutorSchema),
   TutorController.createTutor,

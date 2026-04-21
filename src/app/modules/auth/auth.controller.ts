@@ -92,6 +92,7 @@ const logoutUser = catchAsync(async (req: Request, res: Response) => {
 const getMe = catchAsync(async (req: Request, res: Response) => {
   const user = req.user;
   console.log("User from getMe", user);
+  console.log("User type", typeof user);
   const result = await AuthService.getMe(user as IRequestUser);
 
   sendResponse(res, {

@@ -4,7 +4,7 @@ model Tutor {
     name                  String
     email                 String       @unique
     profilePhoto          String?
-    contactNumber         String
+    contactNumber         String       @unique
     availabilityStartTime DateTime
     availabilityEndTime   DateTime
     availableDays         DaysOfWeek[]

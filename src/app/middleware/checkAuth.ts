@@ -115,9 +115,29 @@ export const checkAuth =
         );
       }
 
+      // Fallback: If req.user was not set from session, populate from access token
+      if (!req.user && verifiedToken.data) {
+        req.user = {
+          userId: verifiedToken.data.userId as string,
+          role: verifiedToken.data.role as string,
+          email: verifiedToken.data.email as string,
+          name: verifiedToken.data.name as string,
+          status: verifiedToken.data.status as string,
+          emailVerified: verifiedToken.data.emailVerified as boolean,
+        };
+      }
+
+      // Ensure req.user is defined before proceeding
+      if (!req.user) {
+        throw new AppError(
+          status.UNAUTHORIZED,
+          "Unauthorized access! User information not found.",
+        );
+      }
+
       if (
         authRoles.length > 0 &&
-        !authRoles.includes(verifiedToken.data!.role as UserRole)
+        !authRoles.includes(req.user.role as UserRole)
       ) {
         throw new AppError(
           status.FORBIDDEN,

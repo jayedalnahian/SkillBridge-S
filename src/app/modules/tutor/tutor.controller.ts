@@ -31,9 +31,7 @@ const getSingleTutor = catchAsync(async (req: Request, res: Response) => {
 });
 
 const createTutor = catchAsync(async (req: Request, res: Response) => {
-  if (!req.file) {
-    throw new AppError(status.BAD_REQUEST, "Tutor image is required");
-  }
+
 
   const result = await TutorService.createTutor(
     req.body as ITutorPayload,

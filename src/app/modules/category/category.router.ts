@@ -6,7 +6,6 @@ import { checkAuth } from "../../middleware/checkAuth";
 import { UserRole } from "../../generated/prisma";
 import { validateRequest } from "../../middleware/validateRequest";
 
-
 const router = Router();
 
 router.post(
