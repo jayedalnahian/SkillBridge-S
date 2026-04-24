@@ -64,13 +64,142 @@ const deleteCategory = async (id: string) => {
     }
   }
 
-  const result = await prisma.category.update({
+  const result = await prisma.category.delete({
     where: {
       id,
     },
+    
+  });
+
+  return result;
+};
+
+const bulkDeleteCategories = async (ids: string[]) => {
+  if (!ids || ids.length === 0) {
+    throw new AppError(status.BAD_REQUEST, "No category IDs provided");
+  }
+
+  const results = {
+    deleted: [] as string[],
+    notFound: [] as string[],
+    inUse: [] as string[],
+    errors: [] as { id: string; message: string }[],
+  };
+
+  for (const id of ids) {
+    try {
+      const categoryDetail = await prisma.category.findUnique({
+        where: { id },
+      });
+
+      if (!categoryDetail) {
+        results.notFound.push(id);
+        continue;
+      }
+
+      // Skip if already deleted
+      if (categoryDetail.isDeleted) {
+        results.deleted.push(id);
+        continue;
+      }
+
+      // Check if category is in use by a tutor
+      const isCategoryUsed = await prisma.tutor.findFirst({
+        where: {
+          tutorCategory: {
+            some: {
+              categoryId: id,
+            },
+          },
+        },
+      });
+
+      if (isCategoryUsed) {
+        results.inUse.push(id);
+        continue;
+      }
+
+      // Soft delete
+      await prisma.category.update({
+        where: { id },
+        data: {
+          isDeleted: true,
+          deletedAt: new Date(),
+        },
+      });
+
+      results.deleted.push(id);
+    } catch (error: any) {
+      results.errors.push({ id, message: error.message || "Unknown error" });
+    }
+  }
+
+  // If nothing was deleted and there were errors, throw an error
+  if (results.deleted.length === 0 && (results.notFound.length > 0 || results.inUse.length > 0 || results.errors.length > 0)) {
+    const messages: string[] = [];
+    if (results.notFound.length > 0) {
+      messages.push(`${results.notFound.length} category(s) not found`);
+    }
+    if (results.inUse.length > 0) {
+      messages.push(`${results.inUse.length} category(s) in use by tutors`);
+    }
+    if (results.errors.length > 0) {
+      messages.push(`${results.errors.length} category(s) failed to delete`);
+    }
+    throw new AppError(status.BAD_REQUEST, messages.join("; "));
+  }
+
+  return results;
+};
+
+const restoreCategory = async (id: string) => {
+  const category = await prisma.category.findUnique({
+    where: { id },
+  });
+
+  if (!category) {
+    throw new AppError(status.NOT_FOUND, "Category not found");
+  }
+
+  if (!category.isDeleted) {
+    throw new AppError(status.BAD_REQUEST, "Category is not deleted");
+  }
+
+  // Check for name conflicts with active categories
+  const nameConflict = await prisma.category.findFirst({
+    where: {
+      name: category.name,
+      isDeleted: false,
+      id: { not: id },
+    },
+  });
+  if (nameConflict) {
+    throw new AppError(
+      status.CONFLICT,
+      `Cannot restore: Another active category with name "${category.name}" already exists`,
+    );
+  }
+
+  // Check for slug conflicts with active categories
+  const slugConflict = await prisma.category.findFirst({
+    where: {
+      slug: category.slug,
+      isDeleted: false,
+      id: { not: id },
+    },
+  });
+  if (slugConflict) {
+    throw new AppError(
+      status.CONFLICT,
+      `Cannot restore: Another active category with slug "${category.slug}" already exists`,
+    );
+  }
+
+  const result = await prisma.category.update({
+    where: { id },
     data: {
-      isDeleted: !categoryDetail.isDeleted,
-      deletedAt: categoryDetail.isDeleted ? null : new Date(),
+      isDeleted: false,
+      deletedAt: null,
     },
   });
 
@@ -131,5 +260,7 @@ export const CategoryService = {
   createCategory,
   getAllCategories,
   deleteCategory,
+  bulkDeleteCategories,
   updateCategory,
+  restoreCategory,
 };

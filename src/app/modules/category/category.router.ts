@@ -20,11 +20,21 @@ router.delete(
   checkAuth(UserRole.ADMIN),
   CategoryController.deleteCategory,
 );
+router.post(
+  "/bulk-delete",
+  checkAuth(UserRole.ADMIN),
+  CategoryController.bulkDeleteCategories,
+);
 router.patch(
   "/:id",
   checkAuth(UserRole.ADMIN),
   validateRequest(createCategorySchema),
   CategoryController.updateCategory,
+);
+router.patch(
+  "/restore/:id",
+  checkAuth(UserRole.ADMIN),
+  CategoryController.restoreCategory,
 );
 
 export const CategoryRouter = router;

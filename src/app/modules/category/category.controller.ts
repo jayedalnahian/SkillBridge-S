@@ -42,6 +42,18 @@ const deleteCategory = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const bulkDeleteCategories = catchAsync(async (req: Request, res: Response) => {
+  const { ids } = req.body;
+  const result = await CategoryService.bulkDeleteCategories(ids as string[]);
+  sendResponse(res, {
+    statusCode: status.OK,
+    success: true,
+    message: `Successfully deleted ${result.deleted.length} categor${result.deleted.length === 1 ? 'y' : 'ies'}`,
+    data: result,
+    error: null,
+  });
+});
+
 const updateCategory = catchAsync(async (req: Request, res: Response) => {
   const { id } = req.params;
   const payload = req.body;
@@ -55,9 +67,23 @@ const updateCategory = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const restoreCategory = catchAsync(async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const result = await CategoryService.restoreCategory(id as string);
+  sendResponse(res, {
+    statusCode: status.OK,
+    success: true,
+    message: "Category restored successfully",
+    data: result,
+    error: null,
+  });
+});
+
 export const CategoryController = {
   createCategory,
   getAllCategories,
   deleteCategory,
+  bulkDeleteCategories,
   updateCategory,
+  restoreCategory,
 };
