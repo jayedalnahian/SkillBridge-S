@@ -22,6 +22,8 @@ export const tutorFilterableFields = [
   "designation",
   "availableDays", // enum array
   "tutorCategory.Category.name", // category filter
+  "isDeleted", // boolean filter
+  "status", // enum filter
 ];
 
 // Safe dynamic include config

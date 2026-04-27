@@ -5,7 +5,8 @@ export const createTutorSchema = z.object({
   password: z
     .string("password is required")
     .min(6, "password must be at lease 6 characters")
-    .max(20, "password must be at most 20 characters"),
+    .max(20, "password must be at most 20 characters")
+    .regex(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{6,20}$/, "Password must contain at least one uppercase letter, one lowercase letter, one number and one special character"),
   tutor: z.object({
     name: z.string("Name is required"),
     email: z.string("Email is required"),

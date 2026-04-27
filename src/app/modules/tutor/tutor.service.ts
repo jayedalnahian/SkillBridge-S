@@ -31,11 +31,9 @@ const getAllTutors = async (query: IQueryParams) => {
   const result = await queryBuilder
     .search()
     .filter()
-    .where({ isDeleted: false }) // soft delete protection
     .sort()
     .paginate()
     .fields()
-    .dynamicInclude(tutorIncludeConfig)
     .execute();
 
   return result;
@@ -113,10 +111,33 @@ const createTutor = async (payload: ITutorPayload) => {
     const result = await prisma.$transaction(async (tx) => {
       const { availabilityStartTime, availabilityEndTime, ...otherTutorData } =
         payload.tutor;
-      const today = new Date().toISOString().split("T")[0]; // "2026-02-25"
+      const today = new Date().toISOString().split("T")[0];
+    
 
-      const startDateTime = new Date(`${today}T${availabilityStartTime}:00`);
-      const endDateTime = new Date(`${today}T${availabilityEndTime}:00`);
+      // Parse time components and create Date using UTC to preserve the intended time
+      const [startHours, startMinutes] = availabilityStartTime.split(":").map(Number);
+      const [endHours, endMinutes] = availabilityEndTime.split(":").map(Number);
+      console.log("today", today);
+      console.log("availabilityStartTime", availabilityStartTime);
+      console.log("availabilityEndTime", availabilityEndTime);
+      console.log("startHours", startHours);
+      console.log("startMinutes", startMinutes);
+      console.log("endHours", endHours);
+      console.log("endMinutes", endMinutes);
+      const startDateTime = new Date(Date.UTC(
+        parseInt(today.split("-")[0]),
+        parseInt(today.split("-")[1]) - 1,
+        parseInt(today.split("-")[2]),
+        startHours,
+        startMinutes
+      ));
+      const endDateTime = new Date(Date.UTC(
+        parseInt(today.split("-")[0]),
+        parseInt(today.split("-")[1]) - 1,
+        parseInt(today.split("-")[2]),
+        endHours,
+        endMinutes
+      ));
       const tutorData = await tx.tutor.create({
         data: {
           ...otherTutorData,
@@ -257,10 +278,197 @@ const updateTutor = async (
   return result;
 };
 
-const deleteTutor = async (id: string) => {
+const bulkSoftDeleteTutors = async (ids: string[]) => {
+  if (!ids || ids.length === 0) {
+    throw new AppError(status.BAD_REQUEST, "No tutor IDs provided");
+  }
+
+  const results = {
+    deleted: [] as string[],
+    notFound: [] as string[],
+    alreadyDeleted: [] as string[],
+    hasBookings: [] as string[],
+    errors: [] as { id: string; message: string }[],
+  };
+
+  for (const id of ids) {
+    try {
+      const tutor = await prisma.tutor.findUnique({
+        where: { id },
+      });
+
+      if (!tutor) {
+        results.notFound.push(id);
+        continue;
+      }
+
+      // Skip if already deleted
+      if (tutor.isDeleted) {
+        results.alreadyDeleted.push(id);
+        continue;
+      }
+
+      // Check for active or pending bookings
+      const tutorHasBookings = await prisma.booking.findFirst({
+        where: {
+          tutorId: id,
+          status: {
+            in: [BookingStatus.ACCEPTED, BookingStatus.PENDING],
+          },
+        },
+      });
+
+      if (tutorHasBookings) {
+        results.hasBookings.push(id);
+        continue;
+      }
+
+      // Soft delete tutor and associated user in transaction
+      await prisma.$transaction(async (tx) => {
+        await tx.tutor.update({
+          where: { id },
+          data: {
+            isDeleted: true,
+            deletedAt: new Date(),
+          },
+        });
+
+        await tx.user.update({
+          where: { id: tutor.userId },
+          data: {
+            isDeleted: true,
+            deletedAt: new Date(),
+          },
+        });
+      });
+
+      results.deleted.push(id);
+    } catch (error: any) {
+      results.errors.push({ id, message: error.message || "Unknown error" });
+    }
+  }
+
+  // If nothing was deleted and there were issues, throw an error
+  if (
+    results.deleted.length === 0 &&
+    (results.notFound.length > 0 ||
+      results.hasBookings.length > 0 ||
+      results.alreadyDeleted.length > 0 ||
+      results.errors.length > 0)
+  ) {
+    const messages: string[] = [];
+    if (results.notFound.length > 0) {
+      messages.push(`${results.notFound.length} tutor(s) not found`);
+    }
+    if (results.hasBookings.length > 0) {
+      messages.push(`${results.hasBookings.length} tutor(s) have active/pending bookings`);
+    }
+    if (results.alreadyDeleted.length > 0) {
+      messages.push(`${results.alreadyDeleted.length} tutor(s) already deleted`);
+    }
+    if (results.errors.length > 0) {
+      messages.push(`${results.errors.length} tutor(s) failed to delete`);
+    }
+    throw new AppError(status.BAD_REQUEST, messages.join("; "));
+  }
+  console.log(results)
+  return results;
+};
+
+const restoreTutor = async (id: string) => {
   const tutor = await prisma.tutor.findUnique({
+    where: { id },
+    include: { User: true },
+  });
+
+  if (!tutor) {
+    throw new AppError(status.NOT_FOUND, "Tutor not found.");
+  }
+
+  if (!tutor.isDeleted) {
+    throw new AppError(status.BAD_REQUEST, "Tutor is not deleted.");
+  }
+
+  // Check for email conflicts with active tutors
+  const emailConflict = await prisma.tutor.findFirst({
     where: {
-      id,
+      email: tutor.email,
+      isDeleted: false,
+      id: { not: id },
+    },
+  });
+  if (emailConflict) {
+    throw new AppError(
+      status.CONFLICT,
+      `Cannot restore: Another active tutor with email "${tutor.email}" already exists`,
+    );
+  }
+
+  // Check for contact number conflicts with active tutors
+  const contactConflict = await prisma.tutor.findFirst({
+    where: {
+      contactNumber: tutor.contactNumber,
+      isDeleted: false,
+      id: { not: id },
+    },
+  });
+  if (contactConflict) {
+    throw new AppError(
+      status.CONFLICT,
+      `Cannot restore: Another active tutor with contact number "${tutor.contactNumber}" already exists`,
+    );
+  }
+
+  // Check for user email conflicts
+  const userEmailConflict = await prisma.user.findFirst({
+    where: {
+      email: tutor.User.email,
+      isDeleted: false,
+      id: { not: tutor.userId },
+    },
+  });
+  if (userEmailConflict) {
+    throw new AppError(
+      status.CONFLICT,
+      `Cannot restore: Another active user with email "${tutor.User.email}" already exists`,
+    );
+  }
+
+  const result = await prisma.$transaction(async (tx) => {
+    const restoredTutor = await tx.tutor.update({
+      where: { id },
+      data: {
+        isDeleted: false,
+        deletedAt: null,
+      },
+    });
+
+    await tx.user.update({
+      where: { id: tutor.userId },
+      data: {
+        isDeleted: false,
+        deletedAt: null,
+      },
+    });
+
+    return restoredTutor;
+  });
+
+  return result;
+};
+
+const hardDeleteTutor = async (id: string) => {
+  const tutor = await prisma.tutor.findUnique({
+    where: { id },
+    include: {
+      User: true,
+      bookings: {
+        where: {
+          status: {
+            in: [BookingStatus.ACCEPTED, BookingStatus.PENDING],
+          },
+        },
+      },
     },
   });
 
@@ -268,58 +476,49 @@ const deleteTutor = async (id: string) => {
     throw new AppError(status.NOT_FOUND, "Tutor not found.");
   }
 
-  if (tutor.isDeleted) {
-    throw new AppError(status.BAD_REQUEST, "Tutor is already deleted.");
-  }
-
-  // FIX: Use `in` operator — the `||` expression always evaluates to just "ACCEPTED"
-  const tutorIsBooked = await prisma.booking.findFirst({
-    where: {
-      tutorId: id,
-      status: {
-        in: [BookingStatus.ACCEPTED, BookingStatus.PENDING],
-      },
-    },
-  });
-
-  if (tutorIsBooked) {
+  // Only allow hard delete if tutor is soft-deleted
+  if (!tutor.isDeleted) {
     throw new AppError(
       status.BAD_REQUEST,
-      "Tutor has active or pending bookings and cannot be deleted.",
+      "Tutor must be soft-deleted before permanent deletion.",
     );
   }
 
+  // Check for active bookings
+  if (tutor.bookings.length > 0) {
+    throw new AppError(
+      status.BAD_REQUEST,
+      "Cannot permanently delete tutor with active or pending bookings.",
+    );
+  }
+
+  // Permanent delete - Prisma will handle related data via Cascade
   const result = await prisma.$transaction(async (tx) => {
-    const deletedTutor = await tx.tutor.update({
-      where: {
-        id,
-      },
-      data: {
-        isDeleted: true,
-        deletedAt: new Date(),
-      },
+    // Delete tutor first (this will cascade delete tutorCategory, reviews, bookings via onDelete: Cascade)
+    await tx.tutor.delete({
+      where: { id },
     });
 
-    await tx.user.update({
-      where: {
-        id: tutor.userId,
-      },
-      data: {
-        isDeleted: true,
-        deletedAt: new Date(),
-      },
+    // Delete the associated user account
+    await tx.user.delete({
+      where: { id: tutor.userId },
     });
 
-    return deletedTutor;
+    return { id, message: "Tutor permanently deleted" };
   });
 
   return result;
 };
 
+
+
+
 export const TutorService = {
+  bulkSoftDeleteTutors,
   getAllTutors,
   getSingleTutor,
   createTutor,
   updateTutor,
-  deleteTutor,
+  restoreTutor,
+  hardDeleteTutor,
 };

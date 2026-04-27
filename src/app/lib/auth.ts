@@ -203,7 +203,7 @@ export const auth = betterAuth({
       state: {
         attributes: {
           sameSite: "none",
-          secure: false,
+          secure: true,
           httpOnly: true,
           path: "/",
         },
@@ -211,7 +211,7 @@ export const auth = betterAuth({
       sessionToken: {
         attributes: {
           sameSite: "none",
-          secure: false,
+          secure: true,
           httpOnly: true,
           path: "/",
         },

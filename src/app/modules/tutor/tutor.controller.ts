@@ -13,7 +13,7 @@ const getAllTutors = catchAsync(async (req: Request, res: Response) => {
   sendResponse(res, {
     statusCode: status.OK,
     success: true,
-    message: "Tutor fetched successfully",
+    message: "Tutors fetched successfully",
     data: result,
     error: null,
   });
@@ -65,12 +65,37 @@ const updateTutor = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
-const deleteTutor = catchAsync(async (req: Request, res: Response) => {
-  const result = await TutorService.deleteTutor(req.params.id as string);
+
+const bulkDeleteTutors = catchAsync(async (req: Request, res: Response) => {
+const { ids } = req.body;
+  const result = await TutorService.bulkSoftDeleteTutors(ids as string[]);
   sendResponse(res, {
     statusCode: status.OK,
     success: true,
-    message: "Tutor deleted successfully",
+    message: "Tutor permanently deleted",
+    data: result,
+    error: null,
+  })
+});
+
+
+const restoreTutor = catchAsync(async (req: Request, res: Response) => {
+  const result = await TutorService.restoreTutor(req.params.id as string);
+  sendResponse(res, {
+    statusCode: status.OK,
+    success: true,
+    message: "Tutor restored successfully",
+    data: result,
+    error: null,
+  });
+});
+
+const hardDeleteTutor = catchAsync(async (req: Request, res: Response) => {
+  const result = await TutorService.hardDeleteTutor(req.params.id as string);
+  sendResponse(res, {
+    statusCode: status.OK,
+    success: true,
+    message: "Tutor permanently deleted",
     data: result,
     error: null,
   });
@@ -81,5 +106,7 @@ export const TutorController = {
   getSingleTutor,
   createTutor,
   updateTutor,
-  deleteTutor,
+  restoreTutor,
+  hardDeleteTutor,
+  bulkDeleteTutors
 };

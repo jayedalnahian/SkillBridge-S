@@ -16,7 +16,7 @@ model Category {
 model TutorCategory {
     id         String   @id @default(ulid())
     categoryId String
-    tutorId String @unique
+    tutorId    String
 
     //relations
     Category Category @relation(fields: [categoryId], references: [id], onDelete: Cascade, onUpdate: Cascade)

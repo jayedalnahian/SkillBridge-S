@@ -26,10 +26,22 @@ router.patch(
   TutorController.updateTutor,
 );
 
-router.delete(
-  "/:id",
+router.post(
+  "/bulk-delete",
   checkAuth(UserRole.ADMIN),
-  TutorController.deleteTutor,
+  TutorController.bulkDeleteTutors,
+);
+
+router.patch(
+  "/restore/:id",
+  checkAuth(UserRole.ADMIN),
+  TutorController.restoreTutor,
+);
+
+router.delete(
+  "/permanent/:id",
+  checkAuth(UserRole.ADMIN),
+  TutorController.hardDeleteTutor,
 );
 
 export const TutorRouter = router;
