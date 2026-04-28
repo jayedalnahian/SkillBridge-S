@@ -237,28 +237,16 @@ const updateTutor = async (
   payload: ITutorUpdatePayload,
   role: TUserRole,
 ) => {
-  // Extract categories from payload
-  const { categories, ...tutorData } = payload;
+  // Extract categories and time fields from payload
+  const { categories, availabilityStartTime, availabilityEndTime, ...rest } = payload;
 
   const tutor = await prisma.tutor.findUnique({
-    where: {
-      id: id,
-    },
-    include: {
-      User: true,
-    },
+    where: { id, isDeleted: false },
+    include: { User: true },
   });
 
   if (!tutor) {
     throw new AppError(status.NOT_FOUND, "Tutor not found.");
-  }
-
-  // Prevent updating a soft-deleted tutor
-  if (tutor.isDeleted) {
-    throw new AppError(
-      status.BAD_REQUEST,
-      "Cannot update a deleted tutor profile.",
-    );
   }
 
   // Allow if the user is the tutor owner OR an admin
@@ -284,11 +272,105 @@ const updateTutor = async (
     );
   }
 
-  const result = await prisma.tutor.update({
-    where: {
-      id: id,
-    },
-    data: payload,
+  // Validate and convert availability times to DateTime if provided
+  let startDateTime: Date | undefined;
+  let endDateTime: Date | undefined;
+
+  if (availabilityStartTime || availabilityEndTime) {
+    const currentStartTime = availabilityStartTime
+      ? availabilityStartTime
+      : tutor.availabilityStartTime.toISOString().slice(11, 16);
+    const currentEndTime = availabilityEndTime
+      ? availabilityEndTime
+      : tutor.availabilityEndTime.toISOString().slice(11, 16);
+
+    // Parse time strings (HH:mm) into DateTime objects using today's date as base
+    const today = new Date().toISOString().split("T")[0];
+    const [startHours, startMinutes] = currentStartTime.split(":").map(Number);
+    const [endHours, endMinutes] = currentEndTime.split(":").map(Number);
+
+    startDateTime = new Date(Date.UTC(
+      parseInt(today.split("-")[0]),
+      parseInt(today.split("-")[1]) - 1,
+      parseInt(today.split("-")[2]),
+      startHours,
+      startMinutes
+    ));
+    endDateTime = new Date(Date.UTC(
+      parseInt(today.split("-")[0]),
+      parseInt(today.split("-")[1]) - 1,
+      parseInt(today.split("-")[2]),
+      endHours,
+      endMinutes
+    ));
+
+    // Validate time range
+    if (startDateTime >= endDateTime) {
+      throw new AppError(
+        status.BAD_REQUEST,
+        "Availability start time must be before end time.",
+      );
+    }
+  }
+
+  // Build clean update data - only include defined fields
+  const updateData: any = {};
+
+  // Add scalar fields from rest (exclude any potential id/userId)
+  const { id: _id, userId: _userId, ...safeRest } = rest as any;
+  Object.entries(safeRest).forEach(([key, value]) => {
+    if (value !== undefined) {
+      updateData[key] = value;
+    }
+  });
+
+  // Add converted DateTime fields if they were provided
+  if (startDateTime) updateData.availabilityStartTime = startDateTime;
+  if (endDateTime) updateData.availabilityEndTime = endDateTime;
+
+  // Handle categories update if provided
+  if (categories !== undefined) {
+    // Verify all category IDs exist
+    for (const categoryId of categories) {
+      const category = await prisma.category.findUnique({
+        where: { id: categoryId, isDeleted: false },
+      });
+      if (!category) {
+        throw new AppError(
+          status.BAD_REQUEST,
+          `Category with id ${categoryId} not found or has been deleted.`,
+        );
+      }
+    }
+  }
+
+  // Execute update in transaction to handle both tutor data and category relations
+  const result = await prisma.$transaction(async (tx: any) => {
+    // Update tutor with clean data
+    const updatedTutor = await tx.tutor.update({
+      where: { id },
+      data: updateData,
+    });
+
+    // Update categories if provided
+    if (categories !== undefined) {
+      // Delete existing category associations
+      await tx.tutorCategory.deleteMany({
+        where: { tutorId: id },
+      });
+
+      // Create new category associations
+      if (categories.length > 0) {
+        await tx.tutorCategory.createMany({
+          data: categories.map((categoryId: string) => ({
+            tutorId: id,
+            categoryId,
+          })),
+        });
+      }
+    }
+
+    return updatedTutor;
   });
 
   return result;
