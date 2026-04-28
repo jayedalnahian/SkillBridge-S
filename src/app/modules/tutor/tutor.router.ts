@@ -12,6 +12,7 @@ const router = Router();
 
 router.get("/", TutorController.getAllTutors);
 router.get("/:id", TutorController.getSingleTutor);
+router.get("/:id/categories", TutorController.getAssignedCategories);
 router.post(
   "/",
 

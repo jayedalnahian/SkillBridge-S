@@ -30,6 +30,17 @@ const getSingleTutor = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const getAssignedCategories = catchAsync(async (req: Request, res: Response) => {
+  const result = await TutorService.getAssignedCategories(req.params.id as string);
+  sendResponse(res, {
+    statusCode: status.OK,
+    success: true,
+    message: "Assigned categories fetched successfully",
+    data: result,
+    error: null,
+  });
+});
+
 const createTutor = catchAsync(async (req: Request, res: Response) => {
 
 
@@ -104,6 +115,7 @@ const hardDeleteTutor = catchAsync(async (req: Request, res: Response) => {
 export const TutorController = {
   getAllTutors,
   getSingleTutor,
+  getAssignedCategories,
   createTutor,
   updateTutor,
   restoreTutor,

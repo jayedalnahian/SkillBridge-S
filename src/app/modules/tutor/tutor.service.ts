@@ -218,6 +218,19 @@ const createTutor = async (payload: ITutorPayload) => {
   }
 };
 
+const getAssignedCategories = async (tutorId: string) => {
+  const tutorCategories = await prisma.tutorCategory.findMany({
+    where: {
+      tutorId,
+    },
+    include: {
+      Category: true,
+    },
+  });
+
+  return tutorCategories.map((tc) => tc.Category);
+};
+
 const updateTutor = async (
   tutorId: string,
   userId: string,
@@ -517,6 +530,7 @@ export const TutorService = {
   bulkSoftDeleteTutors,
   getAllTutors,
   getSingleTutor,
+  getAssignedCategories,
   createTutor,
   updateTutor,
   restoreTutor,
