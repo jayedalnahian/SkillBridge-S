@@ -1,9 +1,11 @@
 
-import { UserRole } from "../generated/prisma";
+import prismaPkg from "../generated/prisma/index.js";
 
-import { auth } from "../lib/auth";
-import { prisma } from "../lib/prisma";
-import { envVars } from "../config/env";
+const { UserRole, UserStatus } = prismaPkg as any;
+
+import { auth } from "../lib/auth.js";
+import { prisma } from "../lib/prisma.js";
+import { envVars } from "../config/env.js";
 
 export const seedAdmin = async () => {
   const adminEmail = envVars.ADMIN_EMAIL;
@@ -36,9 +38,10 @@ export const seedAdmin = async () => {
           password: envVars.ADMIN_PASSWORD,
           name: "Super Admin",
           role: UserRole.ADMIN,
+          status: UserStatus.ACTIVE,
           needPasswordChange: false,
           rememberMe: false,
-        },
+        } as any,
       });
 
       if (!signUpResponse || !signUpResponse.user) {
@@ -51,7 +54,7 @@ export const seedAdmin = async () => {
     }
 
     // 3. Update User and Create/Update Admin in a transaction
-    await prisma.$transaction(async (tx) => {
+    await prisma.$transaction(async (tx: any) => {
       await tx.user.update({
         where: { id: userId },
         data: {

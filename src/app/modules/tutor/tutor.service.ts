@@ -1,22 +1,21 @@
 import status from "http-status";
-import AppError from "../../errorHalpers/AppError";
-import {
-  BookingStatus,
-  Category,
-  Prisma,
-  Tutor,
-  UserRole,
-} from "../../generated/prisma/client";
-import { IQueryParams } from "../../interface/query.interface";
-import { prisma } from "../../lib/prisma";
-import { QueryBuilder } from "../../utils/QueryBuilder";
+import AppError from "../../errorHalpers/AppError.js";
+import prismaClientPkg from "../../generated/prisma/client.js";
+import type { Category, Prisma, Tutor, UserRole as TUserRole } from "../../generated/prisma/client.js";
+import prismaPkg from "../../generated/prisma/index.js";
+import { IQueryParams } from "../../interface/query.interface.js";
+import { prisma } from "../../lib/prisma.js";
+import { QueryBuilder } from "../../utils/QueryBuilder.js";
 import {
   tutorFilterableFields,
   tutorIncludeConfig,
   tutorSearchableFields,
-} from "./tutor.constent";
-import { ITutorPayload, ITutorUpdatePayload } from "./tutor.type";
-import { auth } from "../../lib/auth";
+} from "./tutor.constent.js";
+import { ITutorPayload, ITutorUpdatePayload } from "./tutor.type.js";
+import { auth } from "../../lib/auth.js";
+
+const { BookingStatus, UserRole } = prismaClientPkg as any;
+const { UserStatus } = prismaPkg as any;
 
 const getAllTutors = async (query: IQueryParams) => {
   const queryBuilder = new QueryBuilder<
@@ -103,12 +102,13 @@ const createTutor = async (payload: ITutorPayload) => {
       name: payload.tutor.name,
       password: payload.password,
       role: UserRole.TUTOR,
+      status: UserStatus.ACTIVE,
       // image: profilePhoto,
-    },
+    } as any,
   });
 
   try {
-    const result = await prisma.$transaction(async (tx) => {
+    const result = await prisma.$transaction(async (tx: any) => {
       const { availabilityStartTime, availabilityEndTime, ...otherTutorData } =
         payload.tutor;
       const today = new Date().toISOString().split("T")[0];
@@ -228,18 +228,21 @@ const getAssignedCategories = async (tutorId: string) => {
     },
   });
 
-  return tutorCategories.map((tc) => tc.Category);
+  return tutorCategories.map((tc: any) => tc.Category);
 };
 
 const updateTutor = async (
-  tutorId: string,
+  id: string,
   userId: string,
   payload: ITutorUpdatePayload,
-  role: UserRole,
+  role: TUserRole,
 ) => {
+  // Extract categories from payload
+  const { categories, ...tutorData } = payload;
+
   const tutor = await prisma.tutor.findUnique({
     where: {
-      id: tutorId,
+      id: id,
     },
     include: {
       User: true,
@@ -283,7 +286,7 @@ const updateTutor = async (
 
   const result = await prisma.tutor.update({
     where: {
-      id: tutorId,
+      id: id,
     },
     data: payload,
   });
@@ -337,7 +340,7 @@ const bulkSoftDeleteTutors = async (ids: string[]) => {
       }
 
       // Soft delete tutor and associated user in transaction
-      await prisma.$transaction(async (tx) => {
+      await prisma.$transaction(async (tx: any) => {
         await tx.tutor.update({
           where: { id },
           data: {
@@ -447,7 +450,7 @@ const restoreTutor = async (id: string) => {
     );
   }
 
-  const result = await prisma.$transaction(async (tx) => {
+  const result = await prisma.$transaction(async (tx: any) => {
     const restoredTutor = await tx.tutor.update({
       where: { id },
       data: {
@@ -506,7 +509,7 @@ const hardDeleteTutor = async (id: string) => {
   }
 
   // Permanent delete - Prisma will handle related data via Cascade
-  const result = await prisma.$transaction(async (tx) => {
+  const result = await prisma.$transaction(async (tx: any) => {
     // Delete tutor first (this will cascade delete tutorCategory, reviews, bookings via onDelete: Cascade)
     await tx.tutor.delete({
       where: { id },

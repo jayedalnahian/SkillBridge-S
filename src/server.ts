@@ -1,11 +1,11 @@
 import { Server } from "http";
-import app from "./app";
+import app from "./app.js";
 
 
-import connectDB from "./app/utils/connectDB";
+import connectDB from "./app/utils/connectDB.js";
 
-import { seedAdmin } from "./app/utils/seed";
-import { envVars } from "./app/config/env";
+import { seedAdmin } from "./app/utils/seed.js";
+import { envVars } from "./app/config/env.js";
 
 
 

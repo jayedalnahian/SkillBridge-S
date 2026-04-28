@@ -3,8 +3,8 @@ import nodemailer from "nodemailer";
 import path from "path";
 import ejs from "ejs";
 import status from "http-status";
-import { envVars } from "../config/env";
-import AppError from "../errorHalpers/AppError";
+import { envVars } from "../config/env.js";
+import AppError from "../errorHalpers/AppError.js";
 
 
 

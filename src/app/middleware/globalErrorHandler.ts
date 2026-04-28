@@ -1,18 +1,18 @@
 import { NextFunction, Request, Response } from "express";
-import { envVars } from "../config/env";
+import { envVars } from "../config/env.js";
 import status from "http-status";
 import z from "zod";
 // import { handlZodError } from "../app/errorHalpers/handleZodError";
-import AppError from "../errorHalpers/AppError";
+import AppError from "../errorHalpers/AppError.js";
 // import { deleteFileFromCloudinary } from "../config/cloudinary.config";
-import { TErrorResponse, TErrorSources } from "../interface/error.interface";
-import { handlZodError } from "../errorHalpers/handleZodError";
+import { TErrorResponse, TErrorSources } from "../interface/error.interface.js";
+import { handlZodError } from "../errorHalpers/handleZodError.js";
 import {
   PrismaClientKnownRequestError,
   PrismaClientValidationError,
 } from "@prisma/client/runtime/client";
-import { handlePrismaError } from "../errorHalpers/handlePrismaError";
-import { deleteFileFromCloudinary } from "../config/cloudinary.config";
+import { handlePrismaError } from "../errorHalpers/handlePrismaError.js";
+import { deleteFileFromCloudinary } from "../config/cloudinary.config.js";
 
 export const globalErrorHandler = async (
   err: any,

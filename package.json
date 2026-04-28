@@ -7,6 +7,7 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node dist/server.js",
     "build": "tsc",
+    "postbuild": "cp src/app/generated/prisma/package.json dist/app/generated/prisma/package.json",
     "lint": "eslint src",
     "dev": "tsx watch src/server.ts",
     "migrate": "prisma migrate dev",

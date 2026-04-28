@@ -1,10 +1,12 @@
 import { Router } from "express";
-import { CategoryController } from "./category.controller";
-import { multerUpload } from "../../config/multer.config";
-import { createCategorySchema } from "./category.validate";
-import { checkAuth } from "../../middleware/checkAuth";
-import { UserRole } from "../../generated/prisma";
-import { validateRequest } from "../../middleware/validateRequest";
+import prismaPkg from "../../generated/prisma/index.js";
+import { CategoryController } from "./category.controller.js";
+import { multerUpload } from "../../config/multer.config.js";
+import { createCategorySchema } from "./category.validate.js";
+import { checkAuth } from "../../middleware/checkAuth.js";
+import { validateRequest } from "../../middleware/validateRequest.js";
+
+const { UserRole } = prismaPkg as any;
 
 const router = Router();
 

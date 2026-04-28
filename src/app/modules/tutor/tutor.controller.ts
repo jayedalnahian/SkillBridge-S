@@ -1,12 +1,15 @@
 import status from "http-status";
-import { sendResponse } from "../../shared/sendResponse";
-import { catchAsync } from "../../shared/catchAsync";
+import { sendResponse } from "../../shared/sendResponse.js";
+import { catchAsync } from "../../shared/catchAsync.js";
 import { Request, Response } from "express";
-import { TutorService } from "./tutor.service";
-import { IQueryParams } from "../../interface/query.interface";
-import { ITutorPayload, ITutorUpdatePayload } from "./tutor.type";
-import AppError from "../../errorHalpers/AppError";
-import { UserRole } from "../../generated/prisma";
+import { TutorService } from "./tutor.service.js";
+import { IQueryParams } from "../../interface/query.interface.js";
+import { ITutorPayload, ITutorUpdatePayload } from "./tutor.type.js";
+import AppError from "../../errorHalpers/AppError.js";
+import prismaPkg from "../../generated/prisma/index.js";
+import type { UserRole as TUserRole } from "../../generated/prisma/index.js";
+
+const { UserRole } = prismaPkg as any;
 
 const getAllTutors = catchAsync(async (req: Request, res: Response) => {
   const result = await TutorService.getAllTutors(req.query as IQueryParams);
@@ -57,7 +60,7 @@ const createTutor = catchAsync(async (req: Request, res: Response) => {
 });
 
 const updateTutor = catchAsync(async (req: Request, res: Response) => {
-  const userRole = req.user?.role as UserRole;
+  const userRole = req.user?.role as TUserRole;
   const tutorId = req.params.id as string;
   const userId = req.user?.userId as string;
 

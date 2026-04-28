@@ -1,11 +1,13 @@
 import { Router } from "express";
-import { TutorController } from "./tutor.controller";
-import { checkAuth } from "../../middleware/checkAuth";
-import { UserRole } from "../../generated/prisma";
+import { TutorController } from "./tutor.controller.js";
+import { checkAuth } from "../../middleware/checkAuth.js";
+import prismaPkg from "../../generated/prisma/index.js";
 
-import { createTutorSchema, updateTutorSchema } from "./tutor.validate";
-import { multerUpload } from "../../config/multer.config";
-import { validateRequest } from "../../middleware/validateRequest";
+import { createTutorSchema, updateTutorSchema } from "./tutor.validate.js";
+import { multerUpload } from "../../config/multer.config.js";
+import { validateRequest } from "../../middleware/validateRequest.js";
+
+const { UserRole } = prismaPkg as any;
 
 
 const router = Router();

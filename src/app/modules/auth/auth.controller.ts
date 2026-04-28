@@ -1,14 +1,14 @@
-import { catchAsync } from "../../shared/catchAsync";
+import { catchAsync } from "../../shared/catchAsync.js";
 import { Request, Response } from "express";
-import { sendResponse } from "../../shared/sendResponse";
+import { sendResponse } from "../../shared/sendResponse.js";
 import status from "http-status";
-import { AuthService } from "./auth.service";
-import AppError from "../../errorHalpers/AppError";
-import { cookieUtils } from "../../utils/cookie";
-import { IRequestUser } from "../../interface/requestUser.interface";
-import { tokenUtils } from "../../utils/token";
-import { envVars } from "../../config/env";
-import { auth } from "../../lib/auth";
+import { AuthService } from "./auth.service.js";
+import AppError from "../../errorHalpers/AppError.js";
+import { cookieUtils } from "../../utils/cookie.js";
+import { IRequestUser } from "../../interface/requestUser.interface.js";
+import { tokenUtils } from "../../utils/token.js";
+import { envVars } from "../../config/env.js";
+import { auth } from "../../lib/auth.js";
 
 const registerUser = catchAsync(async (req: Request, res: Response) => {
   console.log("Entering AuthController.registerUser...");

@@ -1,14 +1,17 @@
 import { NextFunction, Request, Response } from "express";
 import status from "http-status";
-import { UserRole, UserStatus } from "../generated/prisma";
-import AppError from "../errorHalpers/AppError";
-import { prisma } from "../lib/prisma";
-import { cookieUtils } from "../utils/cookie";
-import { jwtUtils } from "../utils/jwt";
-import { envVars } from "../config/env";
+import prismaPkg from "../generated/prisma/index.js";
+import type { UserRole as TUserRole } from "../generated/prisma/index.js";
+import AppError from "../errorHalpers/AppError.js";
+import { prisma } from "../lib/prisma.js";
+import { cookieUtils } from "../utils/cookie.js";
+import { jwtUtils } from "../utils/jwt.js";
+import { envVars } from "../config/env.js";
+
+const { UserRole, UserStatus } = prismaPkg as any;
 
 export const checkAuth =
-  (...authRoles: UserRole[]) =>
+  (...authRoles: TUserRole[]) =>
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       let sessionToken = cookieUtils.getCookie(
@@ -137,7 +140,7 @@ export const checkAuth =
 
       if (
         authRoles.length > 0 &&
-        !authRoles.includes(req.user.role as UserRole)
+        !authRoles.includes(req.user.role as TUserRole)
       ) {
         throw new AppError(
           status.FORBIDDEN,

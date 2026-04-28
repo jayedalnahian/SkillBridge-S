@@ -3,7 +3,7 @@ import {
   PrismaClientValidationError,
 } from "@prisma/client/runtime/client";
 import status from "http-status";
-import { TErrorSources } from "../interface/error.interface";
+import { TErrorSources } from "../interface/error.interface.js";
 
 type TPrismaErrorResponse = {
   statusCode: number;

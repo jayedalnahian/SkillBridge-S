@@ -1,4 +1,4 @@
-import { Prisma } from "../../generated/prisma/client";
+import type { Prisma } from "../../generated/prisma/client.js";
 
 // Searchable fields
 export const tutorSearchableFields = [

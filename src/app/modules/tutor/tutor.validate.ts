@@ -1,5 +1,7 @@
 import z from "zod";
-import { DaysOfWeek } from "../../generated/prisma";
+import prismaPkg from "../../generated/prisma/index.js";
+
+const { DaysOfWeek } = prismaPkg as any;
 
 export const createTutorSchema = z.object({
   password: z
@@ -55,4 +57,5 @@ export const updateTutorSchema = z.object({
     .string("Availability End Time is required")
     .regex(/^([01]\d|2[0-3]):([0-5]\d)$/, "Invalid time format (HH:mm)")
     .optional(),
+  categories: z.array(z.string()).optional(),
 });

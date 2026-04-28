@@ -1,13 +1,12 @@
 import express, { Application, Request, Response } from "express";
 import cookieParser from "cookie-parser";
-import { globalErrorHandler } from "./app/middleware/globalErrorHandler";
+import { globalErrorHandler } from "./app/middleware/globalErrorHandler.js";
 import { toNodeHandler } from "better-auth/node";
-import { auth } from "./app/lib/auth";
-import { IndexRouter } from "./app/router/Index.Router";
-import notFound from "./app/middleware/notFound";
-import { envVars } from "./app/config/env";
+import { auth } from "./app/lib/auth.js";
+import { IndexRouter } from "./app/router/Index.Router.js";
+import notFound from "./app/middleware/notFound.js";
+import { envVars } from "./app/config/env.js";
 import cors from "cors";
-import { PaymentController } from "./app/modules/payment/payment.controller";
 import qs from "qs";
 import path from "path";
 
@@ -24,7 +23,7 @@ app.use((req, res, next) => {
     next();
 });
 
-app.post("/webhook", express.raw({ type: "application/json" }), PaymentController.handleStripeWebhookEvent)
+// app.post("/webhook", express.raw({ type: "application/json" }), PaymentController.handleStripeWebhookEvent)
 
 
 app.use(cors({

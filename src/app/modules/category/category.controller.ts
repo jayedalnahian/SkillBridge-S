@@ -1,9 +1,9 @@
 import status from "http-status";
-import { catchAsync } from "../../shared/catchAsync";
-import { sendResponse } from "../../shared/sendResponse";
+import { catchAsync } from "../../shared/catchAsync.js";
+import { sendResponse } from "../../shared/sendResponse.js";
 import { Request, Response } from "express";
-import { CategoryService } from "./category.service";
-import AppError from "../../errorHalpers/AppError";
+import { CategoryService } from "./category.service.js";
+import AppError from "../../errorHalpers/AppError.js";
 
 const createCategory = catchAsync(async (req: Request, res: Response) => {
   const payload = req.body;

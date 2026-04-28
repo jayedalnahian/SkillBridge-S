@@ -1,24 +1,31 @@
 import status from "http-status";
-import { auth } from "../../lib/auth";
-import { IAuth, IChangePasswordPayload } from "./auth.type";
-import { UserStatus } from "../../generated/prisma";
-import { IRequestUser } from "../../interface/requestUser.interface";
-import { prisma } from "../../lib/prisma";
-import AppError from "../../errorHalpers/AppError";
-import { tokenUtils } from "../../utils/token";
-import { jwtUtils } from "../../utils/jwt";
-import { envVars } from "../../config/env";
+import { auth } from "../../lib/auth.js";
+import { IAuth, IChangePasswordPayload } from "./auth.type.js";
+import prismaPkg from "../../generated/prisma/index.js";
+import { IRequestUser } from "../../interface/requestUser.interface.js";
+import { prisma } from "../../lib/prisma.js";
+import AppError from "../../errorHalpers/AppError.js";
+import { tokenUtils } from "../../utils/token.js";
+import { jwtUtils } from "../../utils/jwt.js";
+import { envVars } from "../../config/env.js";
 import { JwtPayload } from "jsonwebtoken";
+
+const { UserRole, UserStatus } = prismaPkg as any;
 
 const registerUser = async (payload: IAuth, image?: string) => {
   const { name, email, password } = payload;
+
+  const signUpBody: Record<string, string> = {
+    name,
+    email,
+    password,
+    role: UserRole.STUDENT,
+    status: UserStatus.ACTIVE,
+  };
+  if (image) signUpBody.image = image;
+
   const data = await auth.api.signUpEmail({
-    body: {
-      name,
-      email,
-      password,
-      image,
-    },
+    body: signUpBody as any,
   });
 
   if (!data.user) {
@@ -28,7 +35,7 @@ const registerUser = async (payload: IAuth, image?: string) => {
     );
   }
   try {
-    const student = await prisma.$transaction(async (tx) => {
+    const student = await prisma.$transaction(async (tx: any) => {
       const studentTX = await tx.student.create({
         data: {
           userId: data.user.id,

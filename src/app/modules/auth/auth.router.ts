@@ -7,12 +7,14 @@ import {
   resendOTPSchema,
   resetPasswordSchema,
   verifyEmailSchema,
-} from "./auth.validation";
-import { AuthController } from "./auth.controller";
-import { checkAuth } from "../../middleware/checkAuth";
-import { UserRole } from "../../generated/prisma";
-import { multerUpload } from "../../config/multer.config";
-import { validateRequest } from "../../middleware/validateRequest";
+} from "./auth.validation.js";
+import { AuthController } from "./auth.controller.js";
+import { checkAuth } from "../../middleware/checkAuth.js";
+import prismaPkg from "../../generated/prisma/index.js";
+import { multerUpload } from "../../config/multer.config.js";
+import { validateRequest } from "../../middleware/validateRequest.js";
+
+const { UserRole } = prismaPkg as any;
 
 const router = Router();
 

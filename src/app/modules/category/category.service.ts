@@ -1,9 +1,9 @@
 import status from "http-status";
-import { prisma } from "../../lib/prisma";
-import AppError from "../../errorHalpers/AppError";
-import { ICategoryCreateInput } from "./category.type";
-import { IQueryParams } from "../../interface/query.interface";
-import { QueryBuilder } from "../../utils/QueryBuilder";
+import { prisma } from "../../lib/prisma.js";
+import AppError from "../../errorHalpers/AppError.js";
+import { ICategoryCreateInput } from "./category.type.js";
+import { IQueryParams } from "../../interface/query.interface.js";
+import { QueryBuilder } from "../../utils/QueryBuilder.js";
 
 const createCategory = async (payload: ICategoryCreateInput) => {
   const isCategoryExist = await prisma.category.findFirst({

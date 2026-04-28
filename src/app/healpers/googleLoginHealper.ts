@@ -1,7 +1,7 @@
 import { prisma } from "../lib/prisma.js";
 import prismaPkg from "../generated/prisma/index.js";
 
-const { UserStatus } = prismaPkg;
+const { UserStatus } = prismaPkg as any;
 
 export const googleLoginHealpers = async (profile: any) => {
   const existingUser = await prisma.user.findUnique({
