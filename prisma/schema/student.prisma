@@ -2,6 +2,7 @@ model Student {
     id            String    @id @default(ulid())
     userId        String    @unique
     name          String
+    email         String    @unique
     profilePhoto  String?
     contactNumber String?
     description   String?  @db.Text

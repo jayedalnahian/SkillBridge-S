@@ -117,13 +117,6 @@ const createTutor = async (payload: ITutorPayload) => {
       // Parse time components and create Date using UTC to preserve the intended time
       const [startHours, startMinutes] = availabilityStartTime.split(":").map(Number);
       const [endHours, endMinutes] = availabilityEndTime.split(":").map(Number);
-      console.log("today", today);
-      console.log("availabilityStartTime", availabilityStartTime);
-      console.log("availabilityEndTime", availabilityEndTime);
-      console.log("startHours", startHours);
-      console.log("startMinutes", startMinutes);
-      console.log("endHours", endHours);
-      console.log("endMinutes", endMinutes);
       const startDateTime = new Date(Date.UTC(
         parseInt(today.split("-")[0]),
         parseInt(today.split("-")[1]) - 1,

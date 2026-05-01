@@ -40,6 +40,7 @@ const registerUser = async (payload: IAuth, image?: string) => {
         data: {
           userId: data.user.id,
           name,
+          email,
           profilePhoto: image,
         },
       });
