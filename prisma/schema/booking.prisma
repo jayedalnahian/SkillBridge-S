@@ -5,10 +5,10 @@ model Booking {
     startDateTime DateTime
     endDateTime   DateTime
     status        BookingStatus @default(PENDING)
-    paymentStatus  PaymentStatus     @default(UNPAID)
+    paymentStatus PaymentStatus @default(UNPAID)
     price         Float
     duration      Float
-    meetingLink   String
+    meetingLink   String?
     cancelBy      UserRole?
     cancelReason  String?
     isDeleted     Boolean       @default(false)

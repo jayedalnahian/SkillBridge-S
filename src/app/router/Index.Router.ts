@@ -4,6 +4,7 @@ import { TutorRouter } from "../modules/tutor/tutor.router.js";
 import { CategoryRouter } from "../modules/category/category.router.js";
 import { StudentRouter } from "../modules/student/student.router.js";
 import { AdminRouter } from "../modules/admin/admin.router.js";
+import { BookingRouter } from "../modules/booking/booking.router.js";
 
 
 
@@ -18,6 +19,8 @@ router.use("/category", CategoryRouter);
 router.use("/student", StudentRouter);
 
 router.use("/admin", AdminRouter);
+
+router.use("/booking", BookingRouter);
 
 
 
