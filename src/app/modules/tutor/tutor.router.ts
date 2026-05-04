@@ -17,7 +17,6 @@ router.get("/:id", TutorController.getSingleTutor);
 router.get("/:id/categories", TutorController.getAssignedCategories);
 router.post(
   "/",
-
   checkAuth(UserRole.ADMIN),
   validateRequest(createTutorSchema),
   TutorController.createTutor,
