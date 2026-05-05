@@ -18,14 +18,36 @@ const { BookingStatus, UserRole } = prismaClientPkg as any;
 const { UserStatus } = prismaPkg as any;
 
 const getAllTutors = async (query: IQueryParams) => {
+  // Extract availableDays from query for custom handling
+  const { availableDays, ...restQuery } = query;
+
   const queryBuilder = new QueryBuilder<
     Tutor,
     Prisma.TutorWhereInput,
     Prisma.TutorInclude
-  >(prisma.tutor, query, {
+  >(prisma.tutor, restQuery, {
     searchableFields: tutorSearchableFields,
     filterableFields: tutorFilterableFields,
   });
+
+  // Handle availableDays filter - supports single or multiple days
+  if (availableDays) {
+    const days = Array.isArray(availableDays)
+      ? availableDays
+      : [availableDays];
+
+    if (days.length === 1) {
+      // Single day: use 'has' operator
+      queryBuilder.where({
+        availableDays: { has: days[0] },
+      } as Prisma.TutorWhereInput);
+    } else if (days.length > 1) {
+      // Multiple days: tutor must have ALL specified days (AND logic)
+      queryBuilder.where({
+        availableDays: { hasEvery: days },
+      } as Prisma.TutorWhereInput);
+    }
+  }
 
   const result = await queryBuilder
     .search()

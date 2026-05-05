@@ -30,6 +30,19 @@ const getAllCategories = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const getCategoriesUsedByTutors = catchAsync(async (req: Request, res: Response) => {
+  const { searchTerm } = req.query;
+  const result = await CategoryService.getCategoriesUsedByTutors(searchTerm as string | undefined);
+  sendResponse(res, {
+    statusCode: status.OK,
+    success: true,
+    message: "Categories used by tutors fetched successfully",
+    data: result.data,
+    meta: result.meta,
+    error: null,
+  });
+});
+
 const deleteCategory = catchAsync(async (req: Request, res: Response) => {
   const { id } = req.params;
   const result = await CategoryService.deleteCategory(id as string);
@@ -82,6 +95,7 @@ const restoreCategory = catchAsync(async (req: Request, res: Response) => {
 export const CategoryController = {
   createCategory,
   getAllCategories,
+  getCategoriesUsedByTutors,
   deleteCategory,
   bulkDeleteCategories,
   updateCategory,

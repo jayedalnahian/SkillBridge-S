@@ -1,7 +1,7 @@
 import { z } from "zod";
 export const bookingSchema = z.object({
-  startDateTime: z.coerce.date(),
-  endDateTime: z.coerce.date(),
+  startDateTime: z.coerce.date(), // ex. 2025-10-20T10:00:00.000Z
+  endDateTime: z.coerce.date(), // ex. 2025-10-20T11:00:00.000Z
 });
 
 /**

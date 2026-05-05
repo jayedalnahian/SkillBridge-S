@@ -3,7 +3,7 @@ import {
   calculateBookingDuration,
   getBookingDurationInMinutes,
   InvalidBookingDurationError,
-} from "../../app/utils/bookingDuration.js";
+} from "../../app/utils/booking.js";
 
 describe("calculateBookingDuration", () => {
   describe("valid bookings", () => {

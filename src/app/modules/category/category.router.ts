@@ -17,6 +17,7 @@ router.post(
   CategoryController.createCategory,
 );
 router.get("/", CategoryController.getAllCategories);
+router.get("/used-by-tutors", CategoryController.getCategoriesUsedByTutors);
 router.delete(
   "/:id",
   checkAuth(UserRole.ADMIN),

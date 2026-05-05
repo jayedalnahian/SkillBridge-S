@@ -9,6 +9,7 @@ import { envVars } from "./app/config/env.js";
 import cors from "cors";
 import qs from "qs";
 import path from "path";
+import { PaymentController } from "./app/modules/payment/payment.controller.js";
 
 
 const app: Application = express();
@@ -18,12 +19,12 @@ app.set("query parser", (str : string) => qs.parse(str));
 app.set("view engine", "ejs");
 app.set("views",path.resolve(process.cwd(), `src/app/templates`) )
 
+app.post("/webhook", express.raw({ type: "application/json" }), PaymentController.handleWebhook);
+
 app.use((req, res, next) => {
     console.log(`Incoming Request: ${req.method} ${req.url}`);
     next();
 });
-
-// app.post("/webhook", express.raw({ type: "application/json" }), PaymentController.handleStripeWebhookEvent)
 
 
 app.use(cors({

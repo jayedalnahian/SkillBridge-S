@@ -1,38 +1,25 @@
 import { differenceInMinutes, isBefore, isEqual } from "date-fns";
+import AppError from "../errorHalpers/AppError.js";
+import status from "http-status";
+import { DaysOfWeek, Tutor } from "../generated/prisma/index.js";
 
 /**
  * Options for configuring the duration calculation behavior.
  */
 export interface CalculateDurationOptions {
-  /**
-   * Whether to throw an error when end time is before or equal to start time.
-   * @default true
-   */
+
   strict?: boolean;
-  /**
-   * Minimum allowed duration in minutes.
-   * @default 0
-   */
   minDuration?: number;
 }
 
-/**
- * Result of the duration calculation.
- */
+
 export interface DurationResult {
-  /** Duration in minutes (can have decimals for partial minutes) */
   minutes: number;
-  /** Duration in whole minutes (rounded down) */
   wholeMinutes: number;
-  /** Duration in hours with decimal precision */
   hours: number;
-  /** Whether the duration is valid (positive and meets minimum requirements) */
   isValid: boolean;
 }
 
-/**
- * Custom error class for invalid booking duration scenarios.
- */
 export class InvalidBookingDurationError extends Error {
   constructor(
     message: string,
@@ -48,14 +35,8 @@ export class InvalidBookingDurationError extends Error {
   }
 }
 
-/**
- * Parses input into a Date object.
- * Handles both Date objects and ISO date strings.
- *
- * @param input - Date object or ISO date string
- * @returns Parsed Date object
- * @throws {TypeError} If input is not a valid Date or ISO string
- */
+
+
 const parseDateTime = (input: Date | string): Date => {
   if (input instanceof Date) {
     if (Number.isNaN(input.getTime())) {
@@ -77,50 +58,6 @@ const parseDateTime = (input: Date | string): Date => {
   );
 };
 
-/**
- * Calculates the booking duration between two DateTimes in minutes.
- *
- * This function computes the time difference between a start and end datetime,
- * returning the duration in minutes. It includes validation to ensure the
- * end time is after the start time, and can be configured with various options.
- *
- * @param startDateTime - The booking start time (Date or ISO string)
- * @param endDateTime - The booking end time (Date or ISO string)
- * @param options - Configuration options for the calculation
- * @returns DurationResult object containing minutes, hours, and validity info
- * @throws {InvalidBookingDurationError} If end time is before or equal to start time (when strict mode is enabled)
- * @throws {TypeError} If inputs are not valid Date objects or ISO strings
- *
- * @example
- * ```typescript
- * // Standard 60-minute booking
- * const result = calculateBookingDuration(
- *   "2024-01-15T10:00:00Z",
- *   "2024-01-15T11:00:00Z"
- * );
- * // result.minutes === 60
- * ```
- *
- * @example
- * ```typescript
- * // Booking spanning midnight
- * const result = calculateBookingDuration(
- *   "2024-01-15T23:30:00Z",
- *   "2024-01-16T01:15:00Z"
- * );
- * // result.minutes === 105
- * ```
- *
- * @example
- * ```typescript
- * // With Date objects
- * const result = calculateBookingDuration(
- *   new Date("2024-01-15T10:00:00Z"),
- *   new Date("2024-01-15T11:30:00Z")
- * );
- * // result.minutes === 90
- * ```
- */
 export const calculateBookingDuration = (
   startDateTime: Date | string,
   endDateTime: Date | string,
@@ -164,28 +101,71 @@ export const calculateBookingDuration = (
   };
 };
 
-/**
- * Convenience function that returns just the duration in minutes as a number.
- * Useful for Prisma Float field mapping where you only need the numeric value.
- *
- * @param startDateTime - The booking start time
- * @param endDateTime - The booking end time
- * @returns Duration in minutes as a positive number
- * @throws {InvalidBookingDurationError} If end time is not after start time
- *
- * @example
- * ```typescript
- * // For Prisma Float field
- * const duration = getBookingDurationInMinutes(
- *   "2024-01-15T10:00:00Z",
- *   "2024-01-15T11:00:00Z"
- * );
- * // Can be directly used: prisma.booking.create({ data: { duration } })
- * ```
- */
 export const getBookingDurationInMinutes = (
   startDateTime: Date | string,
   endDateTime: Date | string,
 ): number => {
   return calculateBookingDuration(startDateTime, endDateTime).minutes;
+};
+
+
+
+
+
+
+
+/**
+ * Maps JavaScript day number (0-6) to DaysOfWeek enum
+ */
+export const getDayOfWeekFromDate = (date: Date): DaysOfWeek => {
+    const daysMap: Record<number, DaysOfWeek> = {
+        0: DaysOfWeek.SUNDAY,
+        1: DaysOfWeek.MONDAY,
+        2: DaysOfWeek.TUESDAY,
+        3: DaysOfWeek.WEDNESDAY,
+        4: DaysOfWeek.THURSDAY,
+        5: DaysOfWeek.FRIDAY,
+        6: DaysOfWeek.SATURDAY,
+    };
+    return daysMap[date.getUTCDay()];
+};
+
+/**
+ * Extracts time in HH:mm format from a Date
+ */
+export const getTimeString = (date: Date): string => {
+    const hours = date.getUTCHours().toString().padStart(2, "0");
+    const minutes = date.getUTCMinutes().toString().padStart(2, "0");
+    return `${hours}:${minutes}`;
+};
+
+/**
+ * Validates that a booking time falls within the tutor's availability window
+ */
+export const validateBookingAgainstTutorAvailability = (
+    bookingStart: Date,
+    bookingEnd: Date,
+    tutor: Tutor,
+): void => {
+    // 1. Validate day of week
+    const bookingDay = getDayOfWeekFromDate(bookingStart);
+    if (!tutor.availableDays.includes(bookingDay)) {
+        throw new AppError(
+            status.BAD_REQUEST,
+            `Tutor is not available on ${bookingDay}. Available days: ${tutor.availableDays.join(", ")}`,
+        );
+    }
+
+    // 2. Validate time window (strict containment)
+    const bookingStartTime = getTimeString(bookingStart);
+    const bookingEndTime = getTimeString(bookingEnd);
+    const tutorStartTime = getTimeString(tutor.availabilityStartTime);
+    const tutorEndTime = getTimeString(tutor.availabilityEndTime);
+
+    if (bookingStartTime < tutorStartTime || bookingEndTime > tutorEndTime) {
+        throw new AppError(
+            status.BAD_REQUEST,
+            `Booking time must be between ${tutorStartTime} and ${tutorEndTime}`,
+        );
+    }
 };

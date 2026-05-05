@@ -10,7 +10,7 @@ const router = Router();
 // Get all bookings (with search, filter, pagination, sorting)
 router.get(
     "/",
-    checkAuth(UserRole.ADMIN),
+    checkAuth(UserRole.ADMIN, UserRole.TUTOR, UserRole.STUDENT),
     BookingController.getAllBookings,
 );
 
@@ -23,7 +23,7 @@ router.get(
 
 // Create new booking
 router.post(
-    "/",
+    "/:id",
     checkAuth(UserRole.STUDENT),
     validateRequest(createBookingSchema),
     BookingController.createBooking,

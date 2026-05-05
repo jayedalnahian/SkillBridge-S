@@ -12,8 +12,8 @@ const createBooking = catchAsync(async (req: Request, res: Response) => {
     if (!tutorId) {
         throw new AppError(status.BAD_REQUEST, "Tutor ID is required");
     }
-    const studentId = req.user?.userId
-    const result = await BookingService.createBooking({ ...payload, tutorId, studentId });
+    const userId = req.user?.userId;
+    const result = await BookingService.createBooking({ payload, tutorId: tutorId as string, userId: userId as string });
     sendResponse(res, {
         statusCode: status.OK,
         success: true,
@@ -28,7 +28,9 @@ const createBooking = catchAsync(async (req: Request, res: Response) => {
  */
 const getAllBookings = catchAsync(async (req: Request, res: Response) => {
     const query = req.query;
-    const result = await BookingService.getAllBookings(query);
+    const userRole = req.user?.role as UserRole;
+    const userId = req.user?.userId as string;
+    const result = await BookingService.getAllBookings(query, userRole, userId);
     sendResponse(res, {
         statusCode: status.OK,
         success: true,

@@ -5,6 +5,7 @@ import { CategoryRouter } from "../modules/category/category.router.js";
 import { StudentRouter } from "../modules/student/student.router.js";
 import { AdminRouter } from "../modules/admin/admin.router.js";
 import { BookingRouter } from "../modules/booking/booking.router.js";
+import { PaymentRouter } from "../modules/payment/payment.router.js";
 
 
 
@@ -22,6 +23,6 @@ router.use("/admin", AdminRouter);
 
 router.use("/booking", BookingRouter);
 
-
+router.use("/payment", PaymentRouter);
 
 export const IndexRouter = router;

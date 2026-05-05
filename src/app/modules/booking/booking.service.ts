@@ -1,20 +1,23 @@
-import { getBookingDurationInMinutes } from "../../utils/bookingDuration.js";
+import { getBookingDurationInMinutes, validateBookingAgainstTutorAvailability } from "../../utils/booking.js";
 import calculateBookingPrice from "../../utils/calculateBookingPrice.js";
 import { prisma } from "../../lib/prisma.js";
+import crypto from "crypto";
 import { QueryBuilder } from "../../utils/QueryBuilder.js";
 import status from "http-status";
 import AppError from "../../errorHalpers/AppError.js";
 import { IBookingCreateInput } from "./booking.type.js";
 import { IQueryParams } from "../../interface/query.interface.js";
 import { bookingFilterableFields, bookingSearchableFields } from "./booking.constent.js";
-import { BookingStatus, PaymentStatus, UserRole } from "../../generated/prisma/client.js";
+import { BookingStatus, DaysOfWeek, PaymentStatus, UserRole, Tutor } from "../../generated/prisma/client.js";
+import { stripe } from "../../config/stripe.config.js";
+import { envVars } from "../../config/env.js";
 
 const createBooking = async (payload: IBookingCreateInput) => {
-    const { studentId, tutorId, payload: bookingData } = payload;
+    const { userId, tutorId, payload: bookingData } = payload;
 
     // Validate student exists
     const student = await prisma.student.findUnique({
-        where: { id: studentId },
+        where: { userId },
     });
 
     if (!student) {
@@ -30,6 +33,13 @@ const createBooking = async (payload: IBookingCreateInput) => {
         throw new AppError(status.NOT_FOUND, "Tutor not found");
     }
 
+    // Validate booking is within tutor's availability
+    validateBookingAgainstTutorAvailability(
+        new Date(bookingData.startDateTime),
+        new Date(bookingData.endDateTime),
+        tutor,
+    );
+
     // Calculate duration in minutes
     const durationMinutes = getBookingDurationInMinutes(
         bookingData.startDateTime,
@@ -42,26 +52,101 @@ const createBooking = async (payload: IBookingCreateInput) => {
         durationMinutes,
     });
 
-    // Create booking in database
-    const booking = await prisma.booking.create({
-        data: {
-            studentId,
-            tutorId,
-            startDateTime: new Date(bookingData.startDateTime),
-            endDateTime: new Date(bookingData.endDateTime),
-            price,
-            duration: durationMinutes,
-        },
-        include: {
-            Student: true,
-            Tutor: true,
-        },
+    // Create booking, payment, and Stripe session in a transaction
+    const result = await prisma.$transaction(async (tx: typeof prisma) => {
+        const newBooking = await tx.booking.create({
+            data: {
+                studentId: student.id,
+                tutorId,
+                startDateTime: new Date(bookingData.startDateTime),
+                endDateTime: new Date(bookingData.endDateTime),
+                price,
+                duration: durationMinutes,
+            },
+            include: {
+                Student: true,
+                Tutor: true,
+            },
+        });
+
+        // Create associated payment record
+        const payment = await tx.payment.create({
+            data: {
+                amount: price,
+                transactionId: crypto.randomUUID(),
+                bookingId: newBooking.id,
+                status: PaymentStatus.UNPAID,
+            },
+        });
+
+        // Create Stripe Checkout Session immediately
+        const session = await stripe.checkout.sessions.create({
+            mode: 'payment',
+            payment_method_types: ['card'],
+            line_items: [{
+                price_data: {
+                    currency: 'usd',
+                    product_data: {
+                        name: `Tutoring Session with ${tutor.name || 'Tutor'}`,
+                        description: `Booking ID: ${newBooking.id}\nDate: ${newBooking.startDateTime.toISOString()}`,
+                    },
+                    unit_amount: Math.round(price * 100), // Convert to cents
+                },
+                quantity: 1,
+            }],
+            metadata: {
+                bookingId: newBooking.id,
+                paymentId: payment.id,
+            },
+            success_url: `${envVars.FRONTEND_URL}/dashboard/payment/payment-success`,
+            cancel_url: `${envVars.FRONTEND_URL}/dashboard/bookings`,
+        });
+
+        return {
+            booking: newBooking,
+            payment,
+            paymentUrl: session.url,
+        };
     });
 
-    return booking;
+    return {
+        booking: result.booking,
+        payment: result.payment,
+        paymentUrl: result.paymentUrl,
+    };
 };
 
-const getAllBookings = async (query: IQueryParams) => {
+const getAllBookings = async (query: IQueryParams, userRole: UserRole, userId: string) => {
+    // Initialize filter if not exists
+    if (!query.filter) {
+        query.filter = {};
+    }
+
+    // Apply role-based filtering
+    if (userRole === UserRole.STUDENT) {
+        // Look up student by userId and filter by studentId
+        const student = await prisma.student.findUnique({
+            where: { userId },
+        });
+        if (!student) {
+            throw new AppError(status.NOT_FOUND, "Student not found");
+        }
+        query.filter.studentId = student.id;
+    }
+
+    if (userRole === UserRole.TUTOR) {
+        // Look up tutor by userId and filter by tutorId
+        const tutor = await prisma.tutor.findUnique({
+            where: { userId },
+        });
+        if (!tutor) {
+            throw new AppError(status.NOT_FOUND, "Tutor not found");
+        }
+        query.filter.tutorId = tutor.id;
+    }
+
+    // Admin sees all bookings (no additional filter)
+
     const bookingQuery = new QueryBuilder(prisma.booking, query, {
         searchableFields: bookingSearchableFields,
         filterableFields: bookingFilterableFields,
@@ -180,6 +265,8 @@ const hardDeleteBooking = async (bookingId: string) => {
 
     return result;
 };
+
+
 
 
 

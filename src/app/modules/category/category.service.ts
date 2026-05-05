@@ -40,6 +40,47 @@ const getAllCategories = async (query: IQueryParams) => {
   return result;
 };
 
+const getCategoriesUsedByTutors = async (searchTerm?: string) => {
+  // Find all categories that are linked to at least one non-deleted tutor
+  const categories = await prisma.category.findMany({
+    where: {
+      isDeleted: false,
+      tutorCategories: {
+        some: {
+          Tutor: {
+            isDeleted: false,
+          },
+        },
+      },
+      // Optional search by name
+      ...(searchTerm && {
+        name: {
+          contains: searchTerm,
+          mode: 'insensitive',
+        },
+      }),
+    },
+    select: {
+      id: true,
+      name: true,
+      slug: true,
+    },
+    orderBy: {
+      name: 'asc',
+    },
+  });
+
+  return {
+    data: categories,
+    meta: {
+      page: 1,
+      limit: categories.length,
+      total: categories.length,
+      totalPages: 1,
+    },
+  };
+};
+
 const deleteCategory = async (id: string) => {
   const categoryDetail = await prisma.category.findUnique({
     where: { id },
@@ -52,7 +93,7 @@ const deleteCategory = async (id: string) => {
   if (!categoryDetail.isDeleted) {
     const isCategoryUsed = await prisma.tutor.findFirst({
       where: {
-        tutorCategory: {
+        tutorCategories: {
           some: {
             categoryId: id,
           },
@@ -106,7 +147,7 @@ const bulkDeleteCategories = async (ids: string[]) => {
       // Check if category is in use by a tutor
       const isCategoryUsed = await prisma.tutor.findFirst({
         where: {
-          tutorCategory: {
+          tutorCategories: {
             some: {
               categoryId: id,
             },
@@ -235,7 +276,7 @@ const updateCategory = async (id: string, payload: ICategoryCreateInput) => {
 
   const isCategoryUsed = await prisma.tutor.findFirst({
     where: {
-      tutorCategory: {
+      tutorCategories: {
         some: {
           categoryId: id,
         },
@@ -259,6 +300,7 @@ const updateCategory = async (id: string, payload: ICategoryCreateInput) => {
 export const CategoryService = {
   createCategory,
   getAllCategories,
+  getCategoriesUsedByTutors,
   deleteCategory,
   bulkDeleteCategories,
   updateCategory,
