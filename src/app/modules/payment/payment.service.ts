@@ -7,67 +7,77 @@ import AppError from "../../errorHalpers/AppError.js";
 import status from "http-status";
 
 const handleStripeWebhookEvent = async (event: Stripe.Event) => {
-    const existingPayment = await prisma.payment.findUnique({
+    // Check if this event has already been processed
+    const existingEvent = await prisma.payment.findFirst({
         where: {
-            id: event.id,
+            stripeEventId: event.id,
         },
     });
 
-    if (existingPayment) {
+    if (existingEvent) {
         console.log(`Event ${event.id} already processed. Skipping...`);
-
         return {
             message: `Event ${event.id} already processed. Skipping...`,
-        }
+        };
     }
 
     switch (event.type) {
         case 'checkout.session.completed':
-            const session = event.data.object
-            const bookingId = session.metadata?.bookingId
-            const paymentId = session.metadata?.paymentId
+            const session = event.data.object as Stripe.Checkout.Session;
+            const bookingId = session.metadata?.bookingId;
+            const paymentId = session.metadata?.paymentId;
+
+            console.log(`[Webhook] Processing checkout.session.completed:`, {
+                eventId: event.id,
+                sessionId: session.id,
+                bookingId,
+                paymentId,
+                paymentStatus: session.payment_status,
+            });
 
             if (!bookingId || !paymentId) {
-                console.log(`Missing bookingId or paymentId in metadata for event ${event.id}`);
+                console.error(`[Webhook] Missing metadata:`, session.metadata);
                 return {
                     message: `Missing bookingId or paymentId in metadata for event ${event.id}`,
-                }
+                };
             }
 
             const booking = await prisma.booking.findUnique({
-                where: {
-                    id: bookingId,
-                },
+                where: { id: bookingId },
             });
 
             if (!booking) {
-                console.log(`Booking ${bookingId} not found for event ${event.id}`);
+                console.error(`[Webhook] Booking ${bookingId} not found`);
                 return {
                     message: `Booking ${bookingId} not found for event ${event.id}`,
-                }
+                };
             }
 
-            await prisma.$transaction(async (tx: typeof prisma) => {
-                await tx.booking.update({
-                    where: {
-                        id : bookingId
-                    },
-                    data: {
-                        paymentStatus: session.payment_status === "paid" ? PaymentStatus.PAID : PaymentStatus.UNPAID
-                    }
-                })
+            try {
+                await prisma.$transaction(async (tx: typeof prisma) => {
+                    const bookingUpdate = await tx.booking.update({
+                        where: { id: bookingId },
+                        data: {
+                            paymentStatus: session.payment_status === "paid" ? PaymentStatus.PAID : PaymentStatus.UNPAID,
+                        },
+                    });
+                    console.log(`[Webhook] Booking updated:`, bookingUpdate.id, bookingUpdate.paymentStatus);
 
-                await tx.payment.update({
-                    where: {
-                        id: paymentId
-                    },
-                    data: {
-                        stripeEventId: event.id,
-                        status: session.payment_status === "paid" ? PaymentStatus.PAID : PaymentStatus.UNPAID,
-                        paymentGatewayData: session,
-                    }
-                })
-            })
+                    const paymentUpdate = await tx.payment.update({
+                        where: { id: paymentId },
+                        data: {
+                            stripeEventId: event.id,
+                            status: session.payment_status === "paid" ? PaymentStatus.PAID : PaymentStatus.UNPAID,
+                            paymentGatewayData: session as any,
+                        },
+                    });
+                    console.log(`[Webhook] Payment updated:`, paymentUpdate.id, paymentUpdate.status);
+                });
+                console.log(`[Webhook] Transaction committed successfully`);
+            } catch (txError: any) {
+                console.error(`[Webhook] Transaction failed:`, txError.message);
+                throw txError;
+            }
             break;
 
 

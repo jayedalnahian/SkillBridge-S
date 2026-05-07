@@ -6,12 +6,13 @@ const calculateBookingPrice = async ({tutorid, durationMinutes}: {tutorid: strin
     try {
         const tutor = await prisma.tutor.findUnique({
             where: {
-                id: tutorid
+                id: tutorid,
+                isDeleted: false
             }
         });
         
         if (!tutor) {
-            throw new AppError(status.NOT_FOUND, "Tutor not found");
+            throw new AppError(status.NOT_FOUND, "Tutor not found or has been deleted");
         }
         
         const price = tutor.hourlyRate * (durationMinutes / 60);

@@ -24,6 +24,7 @@ export const tutorFilterableFields = [
   "tutorCategory.Category.name", // category filter
   "isDeleted", // boolean filter
   "status", // enum filter
+  "avgRating"
 ];
 
 // Safe dynamic include config

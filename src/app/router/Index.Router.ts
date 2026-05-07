@@ -6,8 +6,7 @@ import { StudentRouter } from "../modules/student/student.router.js";
 import { AdminRouter } from "../modules/admin/admin.router.js";
 import { BookingRouter } from "../modules/booking/booking.router.js";
 import { PaymentRouter } from "../modules/payment/payment.router.js";
-
-
+import { ReviewRouter } from "../modules/review/review.router.js";
 
 const router = Router();
 
@@ -24,5 +23,7 @@ router.use("/admin", AdminRouter);
 router.use("/booking", BookingRouter);
 
 router.use("/payment", PaymentRouter);
+
+router.use("/review", ReviewRouter);
 
 export const IndexRouter = router;

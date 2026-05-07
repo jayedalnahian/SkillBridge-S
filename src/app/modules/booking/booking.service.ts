@@ -24,13 +24,13 @@ const createBooking = async (payload: IBookingCreateInput) => {
         throw new AppError(status.NOT_FOUND, "Student not found");
     }
 
-    // Validate tutor exists
+    // Validate tutor exists and is not deleted
     const tutor = await prisma.tutor.findUnique({
-        where: { id: tutorId },
+        where: { id: tutorId, isDeleted: false },
     });
 
     if (!tutor) {
-        throw new AppError(status.NOT_FOUND, "Tutor not found");
+        throw new AppError(status.NOT_FOUND, "Tutor not found or has been deleted");
     }
 
     // Validate booking is within tutor's availability
@@ -98,8 +98,8 @@ const createBooking = async (payload: IBookingCreateInput) => {
                 bookingId: newBooking.id,
                 paymentId: payment.id,
             },
-            success_url: `${envVars.FRONTEND_URL}/dashboard/payment/payment-success`,
-            cancel_url: `${envVars.FRONTEND_URL}/dashboard/bookings`,
+            success_url: `${envVars.FRONTEND_URL}/payment/success?session_id={CHECKOUT_SESSION_ID}`,
+            cancel_url: `${envVars.FRONTEND_URL}/payment/cancel?booking_id=${newBooking.id}`,
         });
 
         return {

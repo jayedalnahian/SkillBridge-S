@@ -9,6 +9,7 @@ model Tutor {
     availabilityEndTime   DateTime
     availableDays         DaysOfWeek[]
     status                TutorStatus   @default(ACTIVE)
+    avgRating             Float? @default(0)
     experienceYears       Int
     educationLevel        String
     hourlyRate            Float
@@ -29,4 +30,5 @@ model Tutor {
     @@map("tutor")
     @@index([userId], name: "tutor_user_id_idx")
     @@index([isDeleted], name: "tutor_is_deleted_idx")
+    @@index([avgRating], name: "tutor_avg_rating_idx")
 }

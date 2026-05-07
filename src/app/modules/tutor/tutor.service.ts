@@ -14,7 +14,7 @@ import {
 import { ITutorPayload, ITutorUpdatePayload } from "./tutor.type.js";
 import { auth } from "../../lib/auth.js";
 
-const { BookingStatus, UserRole } = prismaClientPkg as any;
+const { BookingStatus, UserRole, TutorStatus } = prismaClientPkg as any;
 const { UserStatus } = prismaPkg as any;
 
 const getAllTutors = async (query: IQueryParams) => {
@@ -29,6 +29,12 @@ const getAllTutors = async (query: IQueryParams) => {
     searchableFields: tutorSearchableFields,
     filterableFields: tutorFilterableFields,
   });
+
+  // Default filters: exclude soft-deleted and non-active tutors
+  queryBuilder.where({
+    isDeleted: false,
+    status: TutorStatus.ACTIVE,
+  } as Prisma.TutorWhereInput);
 
   // Handle availableDays filter - supports single or multiple days
   if (availableDays) {
