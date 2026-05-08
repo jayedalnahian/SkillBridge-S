@@ -629,8 +629,386 @@ const hardDeleteTutor = async (id: string) => {
   return result;
 };
 
+const getCurrentTutor = async (userId: string) => {
+  const tutor = await prisma.tutor.findUnique({
+    where: {
+      userId
+    }
+  });
 
+  if (!tutor){
+    throw new AppError(status.NOT_FOUND, "Tutor not found");
+  }
 
+  return tutor;
+};
+
+const getBookingStatusDistribution = async (tutorId: string) => {
+  const distribution = await prisma.booking.groupBy({
+    by: ["status"],
+    where: {
+      isDeleted: false,
+      tutorId,
+    },
+    _count: { status: true },
+  });
+
+  return distribution.map((item: { status: string; _count: { status: number } }) => ({
+    status: item.status,
+    count: item._count.status,
+  }));
+};
+
+const getPaymentStatusDistribution = async (tutorId: string) => {
+  const bookings = await prisma.booking.findMany({
+    where: {
+      isDeleted: false,
+      tutorId,
+    },
+    select: {
+      paymentStatus: true,
+    },
+  });
+
+  const distribution: Record<string, number> = {};
+  bookings.forEach((booking: { paymentStatus: string }) => {
+    distribution[booking.paymentStatus] = (distribution[booking.paymentStatus] || 0) + 1;
+  });
+
+  return Object.entries(distribution).map(([status, count]) => ({
+    status,
+    count,
+  }));
+};
+
+const getRatingDistribution = async (tutorId: string) => {
+  const reviews = await prisma.review.findMany({
+    where: {
+      isDeleted: false,
+      tutorId,
+    },
+    select: {
+      rating: true,
+    },
+  });
+
+  const distribution: Record<number, number> = {};
+  reviews.forEach((review: { rating: number }) => {
+    const roundedRating = Math.round(review.rating);
+    distribution[roundedRating] = (distribution[roundedRating] || 0) + 1;
+  });
+
+  return Object.entries(distribution)
+    .map(([rating, count]) => ({ rating: parseInt(rating), count }))
+    .sort((a, b) => b.rating - a.rating);
+};
+
+const getMonthlyBookings = async (tutorId: string) => {
+  const sixMonthsAgo = new Date();
+  sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+
+  const bookings = await prisma.booking.findMany({
+    where: {
+      isDeleted: false,
+      tutorId,
+      createdAt: {
+        gte: sixMonthsAgo,
+      },
+    },
+    select: {
+      createdAt: true,
+    },
+  });
+
+  const monthlyData: Record<string, number> = {};
+  bookings.forEach((booking: { createdAt: Date }) => {
+    const monthKey = booking.createdAt.toISOString().slice(0, 7);
+    monthlyData[monthKey] = (monthlyData[monthKey] || 0) + 1;
+  });
+
+  return Object.entries(monthlyData)
+    .map(([month, bookings]) => ({ month, bookings }))
+    .sort((a, b) => a.month.localeCompare(b.month));
+};
+
+const getMonthlyEarnings = async (tutorId: string) => {
+  const sixMonthsAgo = new Date();
+  sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+
+  const bookings = await prisma.booking.findMany({
+    where: {
+      isDeleted: false,
+      tutorId,
+      paymentStatus: "PAID",
+      createdAt: {
+        gte: sixMonthsAgo,
+      },
+    },
+    include: {
+      payment: true,
+    },
+  });
+
+  const monthlyData: Record<string, number> = {};
+  bookings.forEach((booking: { createdAt: Date; payment: { amount: number } | null }) => {
+    if (booking.payment) {
+      const monthKey = booking.createdAt.toISOString().slice(0, 7);
+      monthlyData[monthKey] = (monthlyData[monthKey] || 0) + booking.payment.amount;
+    }
+  });
+
+  return Object.entries(monthlyData)
+    .map(([month, earnings]) => ({ month, earnings }))
+    .sort((a, b) => a.month.localeCompare(b.month));
+};
+
+const getSessionTimeline = async (tutorId: string) => {
+  const thirtyDaysAgo = new Date();
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+  const bookings = await prisma.booking.findMany({
+    where: {
+      isDeleted: false,
+      tutorId,
+      createdAt: {
+        gte: thirtyDaysAgo,
+      },
+    },
+    select: {
+      createdAt: true,
+      status: true,
+    },
+  });
+
+  const dailyData: Record<string, { completed: number; upcoming: number }> = {};
+  bookings.forEach((booking: { createdAt: Date; status: string }) => {
+    const dateKey = booking.createdAt.toISOString().slice(0, 10);
+    if (!dailyData[dateKey]) {
+      dailyData[dateKey] = { completed: 0, upcoming: 0 };
+    }
+    if (booking.status === "COMPLETED") {
+      dailyData[dateKey].completed++;
+    } else if (["PENDING", "ACCEPTED"].includes(booking.status)) {
+      dailyData[dateKey].upcoming++;
+    }
+  });
+
+  return Object.entries(dailyData)
+    .map(([date, counts]) => ({ date, ...counts }))
+    .sort((a, b) => a.date.localeCompare(b.date));
+};
+
+const getUpcomingSessions = async (tutorId: string) => {
+  const now = new Date();
+
+  const bookings = await prisma.booking.findMany({
+    where: {
+      isDeleted: false,
+      tutorId,
+      status: { in: ["PENDING", "ACCEPTED"] },
+      startDateTime: {
+        gte: now,
+      },
+    },
+    orderBy: {
+      startDateTime: "asc",
+    },
+    take: 5,
+    include: {
+      Student: {
+        select: {
+          name: true,
+        },
+      },
+    },
+  });
+
+  return bookings.map((booking: {
+    id: string;
+    Student: { name: string };
+    startDateTime: Date;
+    duration: number;
+    meetingLink: string | null;
+  }) => ({
+    id: booking.id,
+    studentName: booking.Student.name,
+    subject: "Tutoring Session",
+    startDateTime: booking.startDateTime.toISOString(),
+    duration: booking.duration,
+    meetingLink: booking.meetingLink,
+  }));
+};
+
+const getTopStudents = async (tutorId: string) => {
+  const bookings = await prisma.booking.findMany({
+    where: {
+      isDeleted: false,
+      tutorId,
+      status: "COMPLETED",
+      paymentStatus: "PAID",
+    },
+    include: {
+      Student: {
+        select: {
+          id: true,
+          name: true,
+        },
+      },
+      payment: true,
+    },
+  });
+
+  const studentStats: Record<string, {
+    id: string;
+    name: string;
+    totalSessions: number;
+    totalPaid: number;
+  }> = {};
+
+  bookings.forEach((booking: {
+    Student: { id: string; name: string };
+    payment: { amount: number } | null;
+  }) => {
+    const studentId = booking.Student.id;
+    if (!studentStats[studentId]) {
+      studentStats[studentId] = {
+        id: studentId,
+        name: booking.Student.name,
+        totalSessions: 0,
+        totalPaid: 0,
+      };
+    }
+    studentStats[studentId].totalSessions++;
+    if (booking.payment) {
+      studentStats[studentId].totalPaid += booking.payment.amount;
+    }
+  });
+
+  return Object.values(studentStats)
+    .sort((a, b) => b.totalSessions - a.totalSessions)
+    .slice(0, 5);
+};
+
+const getTutorStats = async (tutorId: string) => {
+  const [
+    totalBookings,
+    completedBookings,
+    upcomingBookings,
+    reviews,
+    uniqueStudents,
+    totalHours,
+    tutor,
+  ] = await Promise.all([
+    prisma.booking.count({
+      where: { isDeleted: false, tutorId },
+    }),
+    prisma.booking.count({
+      where: { isDeleted: false, tutorId, status: "COMPLETED" },
+    }),
+    prisma.booking.count({
+      where: {
+        isDeleted: false,
+        tutorId,
+        status: { in: ["PENDING", "ACCEPTED"] },
+        startDateTime: { gte: new Date() },
+      },
+    }),
+    prisma.review.findMany({
+      where: { isDeleted: false, tutorId },
+      select: { rating: true },
+    }),
+    prisma.booking.groupBy({
+      by: ["studentId"],
+      where: { isDeleted: false, tutorId },
+      _count: { studentId: true },
+    }),
+    prisma.booking.aggregate({
+      where: { isDeleted: false, tutorId, status: "COMPLETED" },
+      _sum: { duration: true },
+    }),
+    prisma.tutor.findUnique({
+      where: { id: tutorId },
+      select: { hourlyRate: true },
+    }),
+  ]);
+
+  const totalReviews = reviews.length;
+  const averageRating = totalReviews > 0
+    ? reviews.reduce((sum: number, r: { rating: number }) => sum + r.rating, 0) / totalReviews
+    : null;
+
+  const bookingsWithPayments = await prisma.booking.findMany({
+    where: {
+      isDeleted: false,
+      tutorId,
+      paymentStatus: "PAID",
+    },
+    include: {
+      payment: true,
+    },
+  });
+
+  const totalEarnings = bookingsWithPayments.reduce(
+    (sum: number, b: { payment: { amount: number } | null }) => sum + (b.payment?.amount || 0),
+    0
+  );
+
+  return {
+    totalBookings,
+    completedSessions: completedBookings,
+    upcomingSessions: upcomingBookings,
+    totalEarnings,
+    averageRating,
+    totalReviews,
+    uniqueStudents: uniqueStudents.length,
+    totalHoursTaught: totalHours._sum.duration || 0,
+    hourlyRate: tutor?.hourlyRate || 0,
+  };
+};
+
+const getDashboardData = async (userId: string) => {
+  const currentTutor = await getCurrentTutor(userId);
+
+  const [
+    bookingStatusDistribution,
+    paymentStatusDistribution,
+    ratingDistribution,
+    monthlyBookings,
+    monthlyEarnings,
+    sessionTimeline,
+    upcomingSessions,
+    topStudents,
+    stats,
+  ] = await Promise.all([
+    getBookingStatusDistribution(currentTutor.id),
+    getPaymentStatusDistribution(currentTutor.id),
+    getRatingDistribution(currentTutor.id),
+    getMonthlyBookings(currentTutor.id),
+    getMonthlyEarnings(currentTutor.id),
+    getSessionTimeline(currentTutor.id),
+    getUpcomingSessions(currentTutor.id),
+    getTopStudents(currentTutor.id),
+    getTutorStats(currentTutor.id),
+  ]);
+
+  return {
+    pieCharts: {
+      bookingStatusDistribution,
+      paymentStatusDistribution,
+      ratingDistribution,
+    },
+    barCharts: {
+      monthlyBookings,
+      monthlyEarnings,
+    },
+    lineCharts: {
+      sessionTimeline,
+    },
+    upcomingSessions,
+    topStudents,
+    stats,
+  };
+};
 
 export const TutorService = {
   bulkSoftDeleteTutors,
@@ -641,4 +1019,5 @@ export const TutorService = {
   updateTutor,
   restoreTutor,
   hardDeleteTutor,
+  getDashboardData,
 };

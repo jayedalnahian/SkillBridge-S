@@ -13,6 +13,7 @@ const { UserRole } = prismaPkg as any;
 const router = Router();
 
 router.get("/", TutorController.getAllTutors);
+router.get("/dashboard", checkAuth(UserRole.TUTOR), TutorController.getDashboardData);
 router.get("/:id", TutorController.getSingleTutor);
 router.get("/:id/categories", TutorController.getAssignedCategories);
 router.post(

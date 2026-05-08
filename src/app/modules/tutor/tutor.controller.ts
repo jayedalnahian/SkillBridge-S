@@ -115,13 +115,26 @@ const hardDeleteTutor = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const getDashboardData = catchAsync(async (req: Request, res: Response) => {
+  const userId = req.user?.userId;
+  const result = await TutorService.getDashboardData(userId as string);
+  sendResponse(res, {
+    statusCode: status.OK,
+    success: true,
+    message: "Tutor dashboard data fetched successfully",
+    data: result,
+    error: null,
+  });
+});
+
 export const TutorController = {
   getAllTutors,
   getSingleTutor,
   getAssignedCategories,
   createTutor,
   updateTutor,
+  bulkDeleteTutors,
   restoreTutor,
   hardDeleteTutor,
-  bulkDeleteTutors
+  getDashboardData,
 };
