@@ -16,9 +16,9 @@ router.get(
 );
 
 router.get(
-    "/:id",
+    "/dashboard",
     checkAuth(UserRole.ADMIN),
-    adminController.getSingleAdmin
+    adminController.getDashboardData,
 );
 
 router.post(
@@ -26,6 +26,12 @@ router.post(
     checkAuth(UserRole.ADMIN),
     validateRequest(createAdminSchema),
     adminController.createAdmin,
+);
+
+router.get(
+    "/:id",
+    checkAuth(UserRole.ADMIN),
+    adminController.getSingleAdmin
 );
 
 router.patch(

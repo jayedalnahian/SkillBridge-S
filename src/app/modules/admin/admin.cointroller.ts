@@ -74,10 +74,22 @@ const createAdmin = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const getDashboardData = catchAsync(async (req: Request, res: Response) => {
+  const result = await adminService.getDashboardData();
+  sendResponse(res, {
+    statusCode: status.OK,
+    success: true,
+    message: "Dashboard data fetched successfully",
+    data: result,
+    error: null,
+  });
+});
+
 export const adminController = {
   getAllAdmins,
   getSingleAdmin,
   createAdmin,
   updateAdmin,
   hardDeleteAdmin,
+  getDashboardData,
 };
