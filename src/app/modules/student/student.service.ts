@@ -432,6 +432,430 @@ const restoreStudent = async (id: string) => {
   return result;
 };
 
+
+
+const getCurrentStudent = async (userId: string) => {
+  const student = await prisma.student.findUnique({
+    where: {
+      userId
+    }
+  })
+
+  if (!student){
+    throw new AppError(status.NOT_FOUND, "student not found")
+  }
+
+  return student
+}
+
+
+
+const getBookingStatusDistribution = async (studentId: string) =>{
+  const currentStudent = await getCurrentStudent(studentId)
+
+
+  const distribution = await prisma.booking.groupBy({
+    by: ["status"],
+    where: {
+      isDeleted: false,
+      studentId: currentStudent.id
+    },
+    _count: { status: true },
+  })
+
+  return distribution.map((item: { status: string; _count: { status: number } }) => ({
+    status: item.status,
+    count: item._count.status,
+  }));
+}
+
+const getPaymentStatusDistribution = async (studentId: string) => {
+  const currentStudent = await getCurrentStudent(studentId);
+
+  const bookings = await prisma.booking.findMany({
+    where: {
+      isDeleted: false,
+      studentId: currentStudent.id,
+    },
+    select: {
+      paymentStatus: true,
+    },
+  });
+
+  const distribution: Record<string, number> = {};
+  bookings.forEach((booking: { paymentStatus: string }) => {
+    distribution[booking.paymentStatus] = (distribution[booking.paymentStatus] || 0) + 1;
+  });
+
+  return Object.entries(distribution).map(([status, count]) => ({
+    status,
+    count,
+  }));
+};
+
+const getSubjectDistribution = async (studentId: string) => {
+  const currentStudent = await getCurrentStudent(studentId);
+
+  const bookings = await prisma.booking.findMany({
+    where: {
+      isDeleted: false,
+      studentId: currentStudent.id,
+    },
+    include: {
+      Tutor: {
+        include: {
+          tutorCategory: {
+            include: {
+              Category: true,
+            },
+          },
+        },
+      },
+    },
+  });
+
+  const subjectCount: Record<string, number> = {};
+  bookings.forEach((booking: { Tutor: { tutorCategory: { Category: { name: string } }[] } }) => {
+    booking.Tutor.tutorCategory.forEach((tc: { Category: { name: string } }) => {
+      const subjectName = tc.Category.name;
+      subjectCount[subjectName] = (subjectCount[subjectName] || 0) + 1;
+    });
+  });
+
+  return Object.entries(subjectCount)
+    .map(([subject, count]) => ({ subject, count }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 10);
+};
+
+const getMonthlyBookings = async (studentId: string) => {
+  const currentStudent = await getCurrentStudent(studentId);
+
+  const sixMonthsAgo = new Date();
+  sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+
+  const bookings = await prisma.booking.findMany({
+    where: {
+      isDeleted: false,
+      studentId: currentStudent.id,
+      createdAt: {
+        gte: sixMonthsAgo,
+      },
+    },
+    select: {
+      createdAt: true,
+    },
+  });
+
+  const monthlyData: Record<string, number> = {};
+  bookings.forEach((booking: { createdAt: Date }) => {
+    const monthKey = booking.createdAt.toISOString().slice(0, 7);
+    monthlyData[monthKey] = (monthlyData[monthKey] || 0) + 1;
+  });
+
+  return Object.entries(monthlyData)
+    .map(([month, bookings]) => ({ month, bookings }))
+    .sort((a, b) => a.month.localeCompare(b.month));
+};
+
+const getMonthlySpending = async (studentId: string) => {
+  const currentStudent = await getCurrentStudent(studentId);
+
+  const sixMonthsAgo = new Date();
+  sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+
+  const bookings = await prisma.booking.findMany({
+    where: {
+      isDeleted: false,
+      studentId: currentStudent.id,
+      paymentStatus: "PAID",
+      createdAt: {
+        gte: sixMonthsAgo,
+      },
+    },
+    include: {
+      payment: true,
+    },
+  });
+
+  const monthlyData: Record<string, number> = {};
+  bookings.forEach((booking: { createdAt: Date; payment: { amount: number } | null }) => {
+    if (booking.payment) {
+      const monthKey = booking.createdAt.toISOString().slice(0, 7);
+      monthlyData[monthKey] = (monthlyData[monthKey] || 0) + booking.payment.amount;
+    }
+  });
+
+  return Object.entries(monthlyData)
+    .map(([month, amount]) => ({ month, amount }))
+    .sort((a, b) => a.month.localeCompare(b.month));
+};
+
+const getSessionTimeline = async (studentId: string) => {
+  const currentStudent = await getCurrentStudent(studentId);
+
+  const thirtyDaysAgo = new Date();
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+  const bookings = await prisma.booking.findMany({
+    where: {
+      isDeleted: false,
+      studentId: currentStudent.id,
+      createdAt: {
+        gte: thirtyDaysAgo,
+      },
+    },
+    select: {
+      createdAt: true,
+      status: true,
+    },
+  });
+
+  const dailyData: Record<string, { completed: number; upcoming: number }> = {};
+  bookings.forEach((booking: { createdAt: Date; status: string }) => {
+    const dateKey = booking.createdAt.toISOString().slice(0, 10);
+    if (!dailyData[dateKey]) {
+      dailyData[dateKey] = { completed: 0, upcoming: 0 };
+    }
+    if (booking.status === "COMPLETED") {
+      dailyData[dateKey].completed++;
+    } else if (["PENDING", "ACCEPTED"].includes(booking.status)) {
+      dailyData[dateKey].upcoming++;
+    }
+  });
+
+  return Object.entries(dailyData)
+    .map(([date, counts]) => ({ date, ...counts }))
+    .sort((a, b) => a.date.localeCompare(b.date));
+};
+
+const getUpcomingSessions = async (studentId: string) => {
+  const currentStudent = await getCurrentStudent(studentId);
+
+  const now = new Date();
+
+  const bookings = await prisma.booking.findMany({
+    where: {
+      isDeleted: false,
+      studentId: currentStudent.id,
+      status: { in: ["PENDING", "ACCEPTED"] },
+      startDateTime: {
+        gte: now,
+      },
+    },
+    orderBy: {
+      startDateTime: "asc",
+    },
+    take: 5,
+    include: {
+      Tutor: {
+        select: {
+          name: true,
+        },
+      },
+    },
+  });
+
+  return bookings.map((booking: {
+    id: string;
+    Tutor: { name: string };
+    startDateTime: Date;
+    duration: number;
+    meetingLink: string | null;
+  }) => ({
+    id: booking.id,
+    tutorName: booking.Tutor.name,
+    subject: "Tutoring Session",
+    startDateTime: booking.startDateTime.toISOString(),
+    duration: booking.duration,
+    meetingLink: booking.meetingLink,
+  }));
+};
+
+const getFavoriteTutors = async (studentId: string) => {
+  const currentStudent = await getCurrentStudent(studentId);
+
+  const bookings = await prisma.booking.findMany({
+    where: {
+      isDeleted: false,
+      studentId: currentStudent.id,
+      status: "COMPLETED",
+    },
+    include: {
+      Tutor: {
+        include: {
+          tutorCategory: {
+            include: {
+              Category: {
+                select: {
+                  name: true,
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+  });
+
+  const tutorStats: Record<string, {
+    id: string;
+    name: string;
+    totalSessions: number;
+    avgRating: number;
+    subjects: string[];
+  }> = {};
+
+  bookings.forEach((booking: {
+    Tutor: {
+      id: string;
+      name: string;
+      avgRating: number;
+      tutorCategory: { Category: { name: string } }[];
+    };
+  }) => {
+    const tutorId = booking.Tutor.id;
+    if (!tutorStats[tutorId]) {
+      tutorStats[tutorId] = {
+        id: tutorId,
+        name: booking.Tutor.name,
+        totalSessions: 0,
+        avgRating: booking.Tutor.avgRating,
+        subjects: booking.Tutor.tutorCategory.map((tc: { Category: { name: string } }) => tc.Category.name),
+      };
+    }
+    tutorStats[tutorId].totalSessions++;
+  });
+
+  return Object.values(tutorStats)
+    .sort((a, b) => b.totalSessions - a.totalSessions)
+    .slice(0, 5)
+    .map((tutor) => ({
+      id: tutor.id,
+      name: tutor.name,
+      subject: tutor.subjects[0] || "General",
+      avgRating: tutor.avgRating,
+      totalSessions: tutor.totalSessions,
+    }));
+};
+
+const getStudentStats = async (studentId: string) => {
+  const currentStudent = await getCurrentStudent(studentId);
+
+  const [
+    totalBookings,
+    completedBookings,
+    upcomingBookings,
+    reviews,
+    uniqueTutors,
+    totalHours,
+  ] = await Promise.all([
+    prisma.booking.count({
+      where: { isDeleted: false, studentId: currentStudent.id },
+    }),
+    prisma.booking.count({
+      where: { isDeleted: false, studentId: currentStudent.id, status: "COMPLETED" },
+    }),
+    prisma.booking.count({
+      where: {
+        isDeleted: false,
+        studentId: currentStudent.id,
+        status: { in: ["PENDING", "ACCEPTED"] },
+        startDateTime: { gte: new Date() },
+      },
+    }),
+    prisma.review.findMany({
+      where: { isDeleted: false, studentId: currentStudent.id },
+      select: { rating: true },
+    }),
+    prisma.booking.groupBy({
+      by: ["tutorId"],
+      where: { isDeleted: false, studentId: currentStudent.id },
+      _count: { tutorId: true },
+    }),
+    prisma.booking.aggregate({
+      where: { isDeleted: false, studentId: currentStudent.id, status: "COMPLETED" },
+      _sum: { duration: true },
+    }),
+  ]);
+
+  const totalReviews = reviews.length;
+  const averageRatingGiven = totalReviews > 0
+    ? reviews.reduce((sum: number, r: { rating: number }) => sum + r.rating, 0) / totalReviews
+    : null;
+
+  const bookingsWithPayments = await prisma.booking.findMany({
+    where: {
+      isDeleted: false,
+      studentId: currentStudent.id,
+      paymentStatus: "PAID",
+    },
+    include: {
+      payment: true,
+    },
+  });
+
+  const totalSpent = bookingsWithPayments.reduce(
+    (sum: number, b: { payment: { amount: number } | null }) => sum + (b.payment?.amount || 0),
+    0
+  );
+
+  return {
+    totalBookings,
+    completedSessions: completedBookings,
+    upcomingSessions: upcomingBookings,
+    totalSpent,
+    averageRatingGiven,
+    totalReviews,
+    uniqueTutors: uniqueTutors.length,
+    totalHoursLearned: totalHours._sum.duration || 0,
+  };
+};
+
+const getDashboardData = async (studentId: string) => {
+  const currentStudent = await getCurrentStudent(studentId);
+
+  const [
+    bookingStatusDistribution,
+    paymentStatusDistribution,
+    subjectDistribution,
+    monthlyBookings,
+    monthlySpending,
+    sessionTimeline,
+    upcomingSessions,
+    favoriteTutors,
+    stats,
+  ] = await Promise.all([
+    getBookingStatusDistribution(studentId),
+    getPaymentStatusDistribution(studentId),
+    getSubjectDistribution(studentId),
+    getMonthlyBookings(studentId),
+    getMonthlySpending(studentId),
+    getSessionTimeline(studentId),
+    getUpcomingSessions(studentId),
+    getFavoriteTutors(studentId),
+    getStudentStats(studentId),
+  ]);
+
+  return {
+    pieCharts: {
+      bookingStatusDistribution,
+      paymentStatusDistribution,
+      subjectDistribution,
+    },
+    barCharts: {
+      monthlyBookings,
+      monthlySpending,
+    },
+    lineCharts: {
+      sessionTimeline,
+    },
+    upcomingSessions,
+    favoriteTutors,
+    stats,
+  };
+};
+
 export const StudentService = {
   getAllStudents,
   getStudentById,
@@ -440,4 +864,5 @@ export const StudentService = {
   bulkSoftDeleteStudents,
   hardDeleteStudent,
   restoreStudent,
+  getDashboardData,
 };

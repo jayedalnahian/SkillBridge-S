@@ -8,6 +8,7 @@ import { updateStudentSchema } from "./student.validation.js";
 const router = Router();
 
 router.get("/", checkAuth(UserRole.ADMIN), StudentController.getAllStudents);
+router.get("/dashboard", checkAuth(UserRole.STUDENT), StudentController.getDashboardData);
 router.get("/:id", checkAuth(UserRole.ADMIN), StudentController.getStudentById);
 router.patch(
   "/:id",

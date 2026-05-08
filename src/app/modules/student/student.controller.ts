@@ -89,6 +89,18 @@ const restoreStudent = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const getDashboardData = catchAsync(async (req: Request, res: Response) => {
+  const studentId = req.user?.userId;
+  const result = await StudentService.getDashboardData(studentId as string);
+  sendResponse(res, {
+    statusCode: status.OK,
+    success: true,
+    message: "Student dashboard data fetched successfully",
+    data: result,
+    error: null,
+  });
+});
+
 export const StudentController = {
   getAllStudents,
   getStudentById,
@@ -97,4 +109,5 @@ export const StudentController = {
   bulkSoftDeleteStudents,
   hardDeleteStudent,
   restoreStudent,
+  getDashboardData,
 };
