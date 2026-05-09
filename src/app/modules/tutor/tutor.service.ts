@@ -139,32 +139,13 @@ const createTutor = async (payload: ITutorPayload) => {
     const result = await prisma.$transaction(async (tx: any) => {
       const { availabilityStartTime, availabilityEndTime, ...otherTutorData } =
         payload.tutor;
-      const today = new Date().toISOString().split("T")[0];
-    
 
-      // Parse time components and create Date using UTC to preserve the intended time
-      const [startHours, startMinutes] = availabilityStartTime.split(":").map(Number);
-      const [endHours, endMinutes] = availabilityEndTime.split(":").map(Number);
-      const startDateTime = new Date(Date.UTC(
-        parseInt(today.split("-")[0]),
-        parseInt(today.split("-")[1]) - 1,
-        parseInt(today.split("-")[2]),
-        startHours,
-        startMinutes
-      ));
-      const endDateTime = new Date(Date.UTC(
-        parseInt(today.split("-")[0]),
-        parseInt(today.split("-")[1]) - 1,
-        parseInt(today.split("-")[2]),
-        endHours,
-        endMinutes
-      ));
       const tutorData = await tx.tutor.create({
         data: {
           ...otherTutorData,
           userId: userData.user.id,
-          availabilityStartTime: startDateTime,
-          availabilityEndTime: endDateTime,
+          availabilityStartTime,
+          availabilityEndTime,
         },
       });
 
@@ -293,45 +274,17 @@ const updateTutor = async (
     );
   }
 
-  // Validate and convert availability times to DateTime if provided
-  let startDateTime: Date | undefined;
-  let endDateTime: Date | undefined;
+  // Validate availability times if provided
+  // Get current times (either new or existing)
+  const currentStartTime = availabilityStartTime ?? tutor.availabilityStartTime;
+  const currentEndTime = availabilityEndTime ?? tutor.availabilityEndTime;
 
-  if (availabilityStartTime || availabilityEndTime) {
-    const currentStartTime = availabilityStartTime
-      ? availabilityStartTime
-      : tutor.availabilityStartTime.toISOString().slice(11, 16);
-    const currentEndTime = availabilityEndTime
-      ? availabilityEndTime
-      : tutor.availabilityEndTime.toISOString().slice(11, 16);
-
-    // Parse time strings (HH:mm) into DateTime objects using today's date as base
-    const today = new Date().toISOString().split("T")[0];
-    const [startHours, startMinutes] = currentStartTime.split(":").map(Number);
-    const [endHours, endMinutes] = currentEndTime.split(":").map(Number);
-
-    startDateTime = new Date(Date.UTC(
-      parseInt(today.split("-")[0]),
-      parseInt(today.split("-")[1]) - 1,
-      parseInt(today.split("-")[2]),
-      startHours,
-      startMinutes
-    ));
-    endDateTime = new Date(Date.UTC(
-      parseInt(today.split("-")[0]),
-      parseInt(today.split("-")[1]) - 1,
-      parseInt(today.split("-")[2]),
-      endHours,
-      endMinutes
-    ));
-
-    // Validate time range
-    if (startDateTime >= endDateTime) {
-      throw new AppError(
-        status.BAD_REQUEST,
-        "Availability start time must be before end time.",
-      );
-    }
+  // Validate time range - string comparison works for HH:mm format
+  if (currentStartTime >= currentEndTime) {
+    throw new AppError(
+      status.BAD_REQUEST,
+      "Availability start time must be before end time.",
+    );
   }
 
   // Build clean update data - only include defined fields
@@ -345,9 +298,9 @@ const updateTutor = async (
     }
   });
 
-  // Add converted DateTime fields if they were provided
-  if (startDateTime) updateData.availabilityStartTime = startDateTime;
-  if (endDateTime) updateData.availabilityEndTime = endDateTime;
+  // Add time fields if they were provided
+  if (availabilityStartTime !== undefined) updateData.availabilityStartTime = availabilityStartTime;
+  if (availabilityEndTime !== undefined) updateData.availabilityEndTime = availabilityEndTime;
 
   // Handle categories update if provided
   if (categories !== undefined) {
@@ -631,12 +584,11 @@ const hardDeleteTutor = async (id: string) => {
 
 const getCurrentTutor = async (userId: string) => {
   const tutor = await prisma.tutor.findUnique({
-    where: {
-      userId
-    }
+    where: { userId, isDeleted: false },
+    include: tutorIncludeConfig,
   });
 
-  if (!tutor){
+  if (!tutor) {
     throw new AppError(status.NOT_FOUND, "Tutor not found");
   }
 
@@ -1014,6 +966,7 @@ export const TutorService = {
   bulkSoftDeleteTutors,
   getAllTutors,
   getSingleTutor,
+  getCurrentTutor,
   getAssignedCategories,
   createTutor,
   updateTutor,

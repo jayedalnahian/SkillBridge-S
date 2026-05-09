@@ -5,8 +5,9 @@ model Tutor {
     email                 String       @unique
     profilePhoto          String?
     contactNumber         String       @unique
-    availabilityStartTime DateTime
-    availabilityEndTime   DateTime
+    timezone              String       @default("UTC")
+    availabilityStartTime String       // HH:mm format (e.g., "22:19")
+    availabilityEndTime   String       // HH:mm format (e.g., "23:19")
     availableDays         DaysOfWeek[]
     status                TutorStatus   @default(ACTIVE)
     avgRating             Float? @default(0)

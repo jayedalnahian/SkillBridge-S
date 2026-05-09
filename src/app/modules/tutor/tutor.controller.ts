@@ -127,9 +127,22 @@ const getDashboardData = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const getCurrentTutor = catchAsync(async (req: Request, res: Response) => {
+  const userId = req.user?.userId;
+  const result = await TutorService.getCurrentTutor(userId as string);
+  sendResponse(res, {
+    statusCode: status.OK,
+    success: true,
+    message: "Current tutor fetched successfully",
+    data: result,
+    error: null,
+  });
+});
+
 export const TutorController = {
   getAllTutors,
   getSingleTutor,
+  getCurrentTutor,
   getAssignedCategories,
   createTutor,
   updateTutor,
