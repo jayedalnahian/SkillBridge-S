@@ -15,17 +15,11 @@ router.post(
   ReviewController.createReview,
 );
 
-// Get my reviews (STUDENT only)
+// Get all reviews (role-based: admin sees all, tutor/student sees own)
 router.get(
-  "/my-reviews",
-  checkAuth(UserRole.STUDENT),
-  ReviewController.getMyReviews,
-);
-
-// Get reviews by tutor (PUBLIC - no auth required)
-router.get(
-  "/tutor/:tutorId",
-  ReviewController.getReviewsByTutor,
+  "/",
+  checkAuth(UserRole.ADMIN, UserRole.TUTOR, UserRole.STUDENT),
+  ReviewController.getAllReviews,
 );
 
 // Update review (STUDENT only)

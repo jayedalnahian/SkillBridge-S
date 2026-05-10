@@ -3,6 +3,7 @@ import { catchAsync } from "../../shared/catchAsync.js";
 import { sendResponse } from "../../shared/sendResponse.js";
 import { Request, Response } from "express";
 import { ReviewService } from "./review.service.js";
+import { UserRole } from "../../generated/prisma/client.js";
 
 const createReview = catchAsync(async (req: Request, res: Response) => {
   const userId = req.user?.userId as string;
@@ -16,29 +17,20 @@ const createReview = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
-const getReviewsByTutor = catchAsync(async (req: Request, res: Response) => {
-  const tutorId = req.params.tutorId as string;
-  const result = await ReviewService.getReviewsByTutor(tutorId);
+const getAllReviews = catchAsync(async (req: Request, res: Response) => {
+  const query = req.query;
+  const userRole = req.user?.role as UserRole;
+  const userId = req.user?.userId as string;
+  const result = await ReviewService.getAllReviews(query, userRole, userId);
   sendResponse(res, {
     statusCode: status.OK,
     success: true,
-    message: "Reviews fetched successfully",
+    message: "Reviews retrieved successfully",
     data: result,
     error: null,
   });
 });
 
-const getMyReviews = catchAsync(async (req: Request, res: Response) => {
-  const studentId = req.user?.userId as string;
-  const result = await ReviewService.getMyReviews(studentId);
-  sendResponse(res, {
-    statusCode: status.OK,
-    success: true,
-    message: "My reviews fetched successfully",
-    data: result,
-    error: null,
-  });
-});
 
 const updateReview = catchAsync(async (req: Request, res: Response) => {
   const studentId = req.user?.userId as string;
@@ -68,8 +60,7 @@ const deleteReview = catchAsync(async (req: Request, res: Response) => {
 
 export const ReviewController = {
   createReview,
-  getReviewsByTutor,
-  getMyReviews,
+  getAllReviews,
   updateReview,
   deleteReview,
 };

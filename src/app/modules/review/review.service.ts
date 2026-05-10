@@ -3,6 +3,13 @@ import status from "http-status";
 import AppError from "../../errorHalpers/AppError.js";
 import { IReviewCreateInput, IReviewUpdateInput } from "./review.type.js";
 import { calculateTutorAvgRating } from "../../utils/calculateTutorAvgRating.js";
+import { QueryBuilder } from "../../utils/QueryBuilder.js";
+import { IQueryParams } from "../../interface/query.interface.js";
+import { UserRole } from "../../generated/prisma/client.js";
+import {
+  reviewSearchableFields,
+  reviewFilterableFields,
+} from "./review.constent.js";
 
 const createReview = async (userId: string, payload: IReviewCreateInput) => {
 const student = await prisma.student.findUnique({
@@ -77,58 +84,54 @@ const studentId = student.id;
   return review;
 };
 
-const getReviewsByTutor = async (tutorId: string) => {
-  const reviews = await prisma.review.findMany({
-    where: {
-      tutorId: tutorId,
-      isDeleted: false,
-    },
-    include: {
-      Student: {
-        include: {
-          User: {
-            select: {
-              name: true,
-              image: true,
-            },
-          },
-        },
-      },
-    },
-    orderBy: {
-      createdAt: "desc",
-    },
-  });
+const getAllReviews = async (
+  query: IQueryParams,
+  userRole: UserRole,
+  userId: string,
+) => {
+  // Initialize filter if not exists
+  if (!query.filter) {
+    query.filter = {};
+  }
 
-  return reviews;
+  // Apply role-based filtering
+  if (userRole === UserRole.STUDENT) {
+    const student = await prisma.student.findUnique({
+      where: { userId },
+    });
+    if (!student) {
+      throw new AppError(status.NOT_FOUND, "Student not found");
+    }
+    query.filter.studentId = student.id;
+  }
+
+  if (userRole === UserRole.TUTOR) {
+    const tutor = await prisma.tutor.findUnique({
+      where: { userId },
+    });
+    if (!tutor) {
+      throw new AppError(status.NOT_FOUND, "Tutor not found");
+    }
+    query.filter.tutorId = tutor.id;
+  }
+
+  // Admin sees all reviews (no additional filter)
+
+  const reviewQuery = new QueryBuilder(prisma.review, query, {
+    searchableFields: reviewSearchableFields,
+    filterableFields: reviewFilterableFields,
+  })
+    .search()
+    .filter()
+    .paginate()
+    .sort()
+    .fields();
+
+  const result = await reviewQuery.execute();
+  return result;
 };
 
-const getMyReviews = async (studentId: string) => {
-  const reviews = await prisma.review.findMany({
-    where: {
-      studentId: studentId,
-      isDeleted: false,
-    },
-    include: {
-      Tutor: {
-        include: {
-          User: {
-            select: {
-              name: true,
-              image: true,
-            },
-          },
-        },
-      },
-      Booking: true,
-    },
-    orderBy: {
-      createdAt: "desc",
-    },
-  });
 
-  return reviews;
-};
 
 const updateReview = async (
   reviewId: string,
@@ -202,8 +205,7 @@ const deleteReview = async (reviewId: string, studentId: string) => {
 
 export const ReviewService = {
   createReview,
-  getReviewsByTutor,
-  getMyReviews,
+  getAllReviews,
   updateReview,
   deleteReview,
 };
