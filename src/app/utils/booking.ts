@@ -117,7 +117,8 @@ export const getBookingDurationInMinutes = (
 /**
  * Maps JavaScript day number (0-6) to DaysOfWeek enum
  */
-export const getDayOfWeekFromDate = (date: Date): DaysOfWeek => {
+export const getDayOfWeekFromDate = (date: Date | string): DaysOfWeek => {
+    const parsedDate = parseDateTime(date);
     const daysMap: Record<number, DaysOfWeek> = {
         0: DaysOfWeek.SUNDAY,
         1: DaysOfWeek.MONDAY,
@@ -127,15 +128,16 @@ export const getDayOfWeekFromDate = (date: Date): DaysOfWeek => {
         5: DaysOfWeek.FRIDAY,
         6: DaysOfWeek.SATURDAY,
     };
-    return daysMap[date.getUTCDay()];
+    return daysMap[parsedDate.getUTCDay()];
 };
 
 /**
  * Extracts time in HH:mm format from a Date
  */
-export const getTimeString = (date: Date): string => {
-    const hours = date.getUTCHours().toString().padStart(2, "0");
-    const minutes = date.getUTCMinutes().toString().padStart(2, "0");
+export const getTimeString = (date: Date | string): string => {
+    const parsedDate = parseDateTime(date);
+    const hours = parsedDate.getUTCHours().toString().padStart(2, "0");
+    const minutes = parsedDate.getUTCMinutes().toString().padStart(2, "0");
     return `${hours}:${minutes}`;
 };
 
@@ -159,8 +161,8 @@ export const validateBookingAgainstTutorAvailability = (
     // 2. Validate time window (strict containment)
     const bookingStartTime = getTimeString(bookingStart);
     const bookingEndTime = getTimeString(bookingEnd);
-    const tutorStartTime = getTimeString(tutor.availabilityStartTime);
-    const tutorEndTime = getTimeString(tutor.availabilityEndTime);
+    const tutorStartTime = tutor.availabilityStartTime;
+    const tutorEndTime = tutor.availabilityEndTime;
 
     if (bookingStartTime < tutorStartTime || bookingEndTime > tutorEndTime) {
         throw new AppError(

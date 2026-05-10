@@ -56,35 +56,6 @@ const getBookingById = catchAsync(async (req: Request, res: Response) => {
 });
 
 
-
-const  cancleBooking = catchAsync(async (req: Request, res: Response) => {
-    const bookingId = req.params.id as string
-    const cancelBy = req.user?.role as UserRole
-    const cancelReason = req.body.cancelReason
-    const result = await BookingService.cancleBooking(bookingId, cancelBy, cancelReason)
-    sendResponse(res, {
-        statusCode: status.OK,
-        success: true,
-        message: "Booking cancelled successfully",
-        data: result,
-        error: null,
-    })
-});
-
-
-const completeBooking = catchAsync(async (req: Request, res: Response) => {
-    const bookingId = req.params.id as string
-    const result = await BookingService.completeBooking(bookingId)
-    sendResponse(res, {
-        statusCode: status.OK,
-        success: true,
-        message: "Booking completed successfully",
-        data: result,
-        error: null,
-    })
-});
-
-
 const hardDeleteBooking = catchAsync(async (req: Request, res: Response) => {
     const bookingId = req.params.id as string
     const result = await BookingService.hardDeleteBooking(bookingId)
@@ -97,11 +68,32 @@ const hardDeleteBooking = catchAsync(async (req: Request, res: Response) => {
     })
 });
 
+const changeBookingStatus = catchAsync(async (req: Request, res: Response) => {
+    const bookingId = req.params.id as string;
+    const { status: bookingStatus, cancelReason } = req.body;
+    console.log(req, "Request from the change booking status")
+    const userRole = req.user?.role as UserRole;
+
+    const result = await BookingService.changeBookingStatus(
+        bookingId,
+        bookingStatus,
+        userRole,
+        cancelReason
+    );
+
+    sendResponse(res, {
+        statusCode: status.OK,
+        success: true,
+        message: `Booking status changed to ${bookingStatus} successfully`,
+        data: result,
+        error: null,
+    });
+});
+
 export const BookingController = {
     createBooking,
     getAllBookings,
     getBookingById,
-    cancleBooking,
-    completeBooking,
     hardDeleteBooking,
+    changeBookingStatus,
 };

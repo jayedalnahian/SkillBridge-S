@@ -15,21 +15,19 @@ export const createBookingSchema = bookingSchema.refine(
     path: ["endDateTime"],
   },
 );
-export const updateBookingSchema = bookingSchema
-  .partial()
-  .refine(
-    (data) => {
-      // Only validate date order if both dates are provided
-      if (data.startDateTime && data.endDateTime) {
-        return data.endDateTime > data.startDateTime;
-      }
-      return true;
-    },
-    {
-      message: "End date/time must be after start date/time",
-      path: ["endDateTime"],
-    },
-  );
+export const updateBookingSchema = bookingSchema.partial().refine(
+  (data) => {
+    // Only validate date order if both dates are provided
+    if (data.startDateTime && data.endDateTime) {
+      return data.endDateTime > data.startDateTime;
+    }
+    return true;
+  },
+  {
+    message: "End date/time must be after start date/time",
+    path: ["endDateTime"],
+  },
+);
 
 /**
  * TypeScript type inferred from the base booking schema
@@ -45,3 +43,8 @@ export type IBookingCreateInput = z.infer<typeof createBookingSchema>;
  * TypeScript type for updating a booking
  */
 export type IBookingUpdateInput = z.infer<typeof updateBookingSchema>;
+
+export const changeBookingStatusSchema = z.object({
+  status: z.enum(["PENDING", "ACCEPTED", "REJECTED", "COMPLETED"]),
+  cancelReason: z.string().optional(),
+});
