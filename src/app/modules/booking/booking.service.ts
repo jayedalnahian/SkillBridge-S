@@ -23,111 +23,128 @@ import {
 } from "../../generated/prisma/client.js";
 import { stripe } from "../../config/stripe.config.js";
 import { envVars } from "../../config/env.js";
+import { IReviewCreateInput } from "../review/review.type.js";
 
 const createBooking = async (payload: IBookingCreateInput) => {
-  const { userId, tutorId, payload: bookingData } = payload;
+  try {
+    const { userId, tutorId, payload: bookingData } = payload;
 
-  // Validate student exists
-  const student = await prisma.student.findUnique({
-    where: { userId },
-  });
-
-  if (!student) {
-    throw new AppError(status.NOT_FOUND, "Student not found");
-  }
-
-  // Validate tutor exists and is not deleted
-  const tutor = await prisma.tutor.findUnique({
-    where: { id: tutorId, isDeleted: false },
-  });
-
-  if (!tutor) {
-    throw new AppError(status.NOT_FOUND, "Tutor not found or has been deleted");
-  }
-
-  // Validate booking is within tutor's availability
-  validateBookingAgainstTutorAvailability(
-    new Date(bookingData.startDateTime),
-    new Date(bookingData.endDateTime),
-    tutor,
-  );
-
-  // Calculate duration in minutes
-  const durationMinutes = getBookingDurationInMinutes(
-    bookingData.startDateTime,
-    bookingData.endDateTime,
-  );
-
-  // Calculate price based on tutor's hourly rate
-  const price = await calculateBookingPrice({
-    tutorid: tutorId,
-    durationMinutes,
-  });
-
-  // Create booking, payment, and Stripe session in a transaction
-  const result = await prisma.$transaction(async (tx: typeof prisma) => {
-    const newBooking = await tx.booking.create({
-      data: {
-        studentId: student.id,
-        tutorId,
-        startDateTime: new Date(bookingData.startDateTime),
-        endDateTime: new Date(bookingData.endDateTime),
-        price,
-        duration: durationMinutes,
-      },
-      include: {
-        Student: true,
-        Tutor: true,
-      },
+    // Validate student exists
+    const student = await prisma.student.findUnique({
+      where: { userId },
     });
 
-    // Create associated payment record
-    const payment = await tx.payment.create({
-      data: {
-        amount: price,
-        transactionId: crypto.randomUUID(),
-        bookingId: newBooking.id,
-        status: PaymentStatus.UNPAID,
-      },
+    if (!student) {
+      throw new AppError(status.NOT_FOUND, "Student not found");
+    }
+
+    // Validate tutor exists and is not deleted
+    const tutor = await prisma.tutor.findUnique({
+      where: { id: tutorId, isDeleted: false },
     });
 
-    // Create Stripe Checkout Session immediately
-    const session = await stripe.checkout.sessions.create({
-      mode: "payment",
-      payment_method_types: ["card"],
-      line_items: [
-        {
-          price_data: {
-            currency: "usd",
-            product_data: {
-              name: `Tutoring Session with ${tutor.name || "Tutor"}`,
-              description: `Booking ID: ${newBooking.id}\nDate: ${newBooking.startDateTime.toISOString()}`,
-            },
-            unit_amount: Math.round(price * 100), // Convert to cents
-          },
-          quantity: 1,
+    if (!tutor) {
+      throw new AppError(
+        status.NOT_FOUND,
+        "Tutor not found or has been deleted",
+      );
+    }
+
+    // Validate booking is within tutor's availability
+    validateBookingAgainstTutorAvailability(
+      new Date(bookingData.startDateTime),
+      new Date(bookingData.endDateTime),
+      tutor,
+    );
+
+    // Calculate duration in minutes
+    const durationMinutes = getBookingDurationInMinutes(
+      bookingData.startDateTime,
+      bookingData.endDateTime,
+    );
+
+    // Calculate price based on tutor's hourly rate
+    const price = await calculateBookingPrice({
+      tutorid: tutorId,
+      durationMinutes,
+    });
+
+    // Create booking, payment, and Stripe session in a transaction
+    const result = await prisma.$transaction(async (tx: typeof prisma) => {
+      const newBooking = await tx.booking.create({
+        data: {
+          studentId: student.id,
+          tutorId,
+          startDateTime: new Date(bookingData.startDateTime),
+          endDateTime: new Date(bookingData.endDateTime),
+          price,
+          duration: durationMinutes,
         },
-      ],
-      metadata: {
-        bookingId: newBooking.id,
-        paymentId: payment.id,
-      },
-      success_url: `${envVars.FRONTEND_URL}/payment/success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${envVars.FRONTEND_URL}/payment/cancel?booking_id=${newBooking.id}`,
+        include: {
+          Student: true,
+          Tutor: true,
+        },
+      });
+
+      // Create associated payment record
+      const payment = await tx.payment.create({
+        data: {
+          amount: price,
+          transactionId: crypto.randomUUID(),
+          bookingId: newBooking.id,
+          status: PaymentStatus.UNPAID,
+        },
+      });
+
+      // Create Stripe Checkout Session immediately
+      const session = await stripe.checkout.sessions.create({
+        mode: "payment",
+        payment_method_types: ["card"],
+        line_items: [
+          {
+            price_data: {
+              currency: "usd",
+              product_data: {
+                name: `Tutoring Session with ${tutor.name || "Tutor"}`,
+                description: `Booking ID: ${newBooking.id}\nDate: ${newBooking.startDateTime.toISOString()}`,
+              },
+              unit_amount: Math.round(price * 100), // Convert to cents
+            },
+            quantity: 1,
+          },
+        ],
+        metadata: {
+          bookingId: newBooking.id,
+          paymentId: payment.id,
+        },
+        success_url: `${envVars.FRONTEND_URL}/payment/success?session_id={CHECKOUT_SESSION_ID}`,
+        cancel_url: `${envVars.FRONTEND_URL}/payment/cancel?booking_id=${newBooking.id}`,
+      });
+
+      await tx.booking.update({
+        where : {
+          id : newBooking.id
+        },
+        data: {
+          paymentUrl: session.url
+        }
+      })
+
+      return {
+        booking: newBooking,
+        payment,
+        paymentUrl: session.url,
+      };
     });
 
     return {
-      booking: newBooking,
-      payment,
-      paymentUrl: session.url,
+      booking: result.booking,
+      payment: result.payment,
+      paymentUrl: result.paymentUrl,
     };
-  });
-
-  return {
-    booking: result.booking,
-    payment: result.payment,
-    paymentUrl: result.paymentUrl,
-  };
+  } catch (error) {
+    throw error;
+  }
 };
 
 const getAllBookings = async (
@@ -173,7 +190,12 @@ const getAllBookings = async (
     .filter()
     .paginate()
     .sort()
-    .fields();
+    .fields()
+    .include({
+      payment: true,
+      Student: true,
+      Tutor: true,
+    });
 
   const result = await bookingQuery.execute();
   return result;
@@ -289,8 +311,66 @@ const confirmBooking = async (bookingId: string, meetingLink: string) => {
     where: { id: bookingId },
     data: {
       status: BookingStatus.ACCEPTED,
-      meetingLink
+      meetingLink,
     },
+  });
+
+  return result;
+};
+
+const completeBooking = async ({
+  bookingId,
+  payload,
+
+}: {
+  bookingId: string;
+  payload: IReviewCreateInput;
+}) => {
+  const booking = await prisma.booking.findUnique({
+    where: { id: bookingId },
+    include: {
+      Student: true,
+      Tutor: true
+    }
+  })
+
+  if (!booking) {
+    throw new AppError(status.NOT_FOUND, "Booking not found");
+  }
+
+  if (booking.status !== BookingStatus.ACCEPTED) {
+    throw new AppError(status.BAD_REQUEST, "Booking is not accepted");
+  }
+
+  if (booking.status === BookingStatus.COMPLETED) {
+    throw new AppError(status.BAD_REQUEST, "Booking is already completed");
+  }
+
+  if (booking.status === BookingStatus.REJECTED) {
+    throw new AppError(status.BAD_REQUEST, "Booking is rejected");
+  }
+
+  const result = await prisma.$transaction(async (tx: any) => {
+    const updatedBooking = await tx.booking.update({
+      where: { id: bookingId },
+      data: { status: BookingStatus.COMPLETED },
+    });
+
+    await tx.payment.update({
+      where: { bookingId: bookingId },
+      data: { status: PaymentStatus.PAID },
+    });
+
+    await tx.review.create({
+      data: {
+        bookingId: bookingId,
+        tutorId: booking.tutorId,
+        studentId: booking.studentId,
+        rating: payload.rating,
+        comment: payload.comment,
+      },
+    });
+    return updatedBooking;
   });
 
   return result;
@@ -302,5 +382,6 @@ export const BookingService = {
   getBookingById,
   hardDeleteBooking,
   changeBookingStatus,
-  confirmBooking
+  confirmBooking,
+  completeBooking
 };

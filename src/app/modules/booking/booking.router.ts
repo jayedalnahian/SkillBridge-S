@@ -4,6 +4,7 @@ import { UserRole } from "../../generated/prisma/client.js";
 import { validateRequest } from "../../middleware/validateRequest.js";
 import { createBookingSchema, changeBookingStatusSchema, confirmBookingSchema } from "./booking.validate.js";
 import { BookingController } from "./booking.controller.js";
+import { createReviewSchema } from "../review/review.validate.js";
 
 const router = Router();
 
@@ -51,6 +52,14 @@ router.patch(
     validateRequest(confirmBookingSchema),
     checkAuth(UserRole.TUTOR),
     BookingController.confirmBooking,
+);
+
+// Complete booking
+router.patch(
+    "/complete-booking/:id",
+    validateRequest(createReviewSchema),
+    checkAuth(UserRole.STUDENT),
+    BookingController.completeBooking,
 );
 
 
