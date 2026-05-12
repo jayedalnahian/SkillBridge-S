@@ -48,3 +48,8 @@ export const changeBookingStatusSchema = z.object({
   status: z.enum(["PENDING", "ACCEPTED", "REJECTED", "COMPLETED"]),
   cancelReason: z.string().optional(),
 });
+
+
+export const confirmBookingSchema = z.object({
+  meetingLink: z.string()
+})

@@ -90,10 +90,24 @@ const changeBookingStatus = catchAsync(async (req: Request, res: Response) => {
     });
 });
 
+const confirmBooking = catchAsync(async (req: Request, res: Response) => {
+    const bookingId = req.params.id as string;
+    const { meetingLink } = req.body;
+    const result = await BookingService.confirmBooking(bookingId, meetingLink as string);
+    sendResponse(res, {
+        statusCode: status.OK,
+        success: true,
+        message: "Booking confirmed successfully",
+        data: result,
+        error: null,
+    });
+});
+
 export const BookingController = {
     createBooking,
     getAllBookings,
     getBookingById,
     hardDeleteBooking,
     changeBookingStatus,
+    confirmBooking
 };

@@ -2,7 +2,7 @@ import { Router } from "express";
 import { checkAuth } from "../../middleware/checkAuth.js";
 import { UserRole } from "../../generated/prisma/client.js";
 import { validateRequest } from "../../middleware/validateRequest.js";
-import { createBookingSchema, changeBookingStatusSchema } from "./booking.validate.js";
+import { createBookingSchema, changeBookingStatusSchema, confirmBookingSchema } from "./booking.validate.js";
 import { BookingController } from "./booking.controller.js";
 
 const router = Router();
@@ -43,6 +43,14 @@ router.delete(
     "/hard-delete-booking/:id",
     checkAuth(UserRole.ADMIN),
     BookingController.hardDeleteBooking,
+);
+
+// confirmBooking
+router.patch(
+    "/confirm-booking/:id",
+    validateRequest(confirmBookingSchema),
+    checkAuth(UserRole.TUTOR),
+    BookingController.confirmBooking,
 );
 
 

@@ -268,10 +268,39 @@ const changeBookingStatus = async (
   return result;
 };
 
+const confirmBooking = async (bookingId: string, meetingLink: string) => {
+  const booking = await prisma.booking.findUnique({
+    where: { id: bookingId },
+  });
+
+  if (!booking) {
+    throw new AppError(status.NOT_FOUND, "Booking not found");
+  }
+
+  if (booking.status !== BookingStatus.PENDING) {
+    throw new AppError(status.BAD_REQUEST, "Booking is not in PENDING state");
+  }
+
+  if (booking.paymentStatus != PaymentStatus.PAID) {
+    throw new AppError(status.BAD_REQUEST, "Booking is not paid");
+  }
+
+  const result = await prisma.booking.update({
+    where: { id: bookingId },
+    data: {
+      status: BookingStatus.ACCEPTED,
+      meetingLink
+    },
+  });
+
+  return result;
+};
+
 export const BookingService = {
   createBooking,
   getAllBookings,
   getBookingById,
   hardDeleteBooking,
   changeBookingStatus,
+  confirmBooking
 };
