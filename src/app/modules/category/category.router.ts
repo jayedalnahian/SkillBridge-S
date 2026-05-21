@@ -1,7 +1,7 @@
 import { Router } from "express";
 import prismaPkg from "../../generated/prisma/index.js";
 import { CategoryController } from "./category.controller.js";
-import { multerUpload } from "../../config/multer.config.js";
+// import { multerUpload } from "../../config/multer.config.js";
 import { createCategorySchema } from "./category.validate.js";
 import { checkAuth } from "../../middleware/checkAuth.js";
 import { validateRequest } from "../../middleware/validateRequest.js";

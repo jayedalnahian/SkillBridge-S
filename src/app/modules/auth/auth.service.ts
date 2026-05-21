@@ -416,6 +416,7 @@ const googleLoginSuccess = async (session: Record<string, any>) => {
       data: {
         userId: session.user.id,
         name: session.user.name,
+        email: session.user.email,
         profilePhoto: session.user.image,
       },
     });

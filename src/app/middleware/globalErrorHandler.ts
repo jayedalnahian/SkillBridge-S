@@ -12,7 +12,7 @@ import {
   PrismaClientValidationError,
 } from "@prisma/client/runtime/client";
 import { handlePrismaError } from "../errorHalpers/handlePrismaError.js";
-import { deleteFileFromCloudinary } from "../config/cloudinary.config.js";
+// import { deleteFileFromCloudinary } from "../config/cloudinary.config.js";
 
 export const globalErrorHandler = async (
   err: any,
@@ -25,15 +25,15 @@ export const globalErrorHandler = async (
     console.error(err);
   }
 
-  if (req.file) {
-    await deleteFileFromCloudinary(req.file.path);
-  }
+  // if (req.file) {
+  //   // await deleteFileFromCloudinary(req.file.path);
+  // }
 
-  if (req.files && Array.isArray(req.files) && req.files.length > 0) {
-    const imageUrls = req.files.map((file) => file.path);
+  // if (req.files && Array.isArray(req.files) && req.files.length > 0) {
+  //   const imageUrls = req.files.map((file) => file.path);
 
-    await Promise.all(imageUrls.map((url) => deleteFileFromCloudinary(url)));
-  }
+  //   await Promise.all(imageUrls.map((url) => deleteFileFromCloudinary(url)));
+  // }
 
   let errorSources: TErrorSources[] = [];
   let statusCode: number = status.INTERNAL_SERVER_ERROR;
