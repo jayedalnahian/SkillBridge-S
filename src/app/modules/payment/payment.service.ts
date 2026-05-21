@@ -6,7 +6,7 @@ import { envVars } from "../../config/env.js";
 import AppError from "../../errorHalpers/AppError.js";
 import status from "http-status";
 
-const handleStripeWebhookEvent = async (event: Stripe.Event) => {
+const handleStripeWebhookEvent = async (event: any) => {
     // Check if this event has already been processed
     const existingEvent = await prisma.payment.findFirst({
         where: {
@@ -23,7 +23,7 @@ const handleStripeWebhookEvent = async (event: Stripe.Event) => {
 
     switch (event.type) {
         case 'checkout.session.completed':
-            const session = event.data.object as Stripe.Checkout.Session;
+            const session = event.data.object as any;
             const bookingId = session.metadata?.bookingId;
             const paymentId = session.metadata?.paymentId;
 

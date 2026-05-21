@@ -37,7 +37,7 @@ const handleWebhook = async (req: Request, res: Response, next: NextFunction) =>
         const endpointSecret = envVars.STRIPE_WEBHOOK_SECRET;
         console.log(`[Webhook] Endpoint secret configured:`, endpointSecret ? "Yes" : "No");
 
-        let event: Stripe.Event;
+        let event: any;
 
         if (endpointSecret) {
             // Verify signature if webhook secret is configured
@@ -86,7 +86,7 @@ const verifyPayment = async (req: Request, res: Response, next: NextFunction) =>
 
         if (session.payment_status === "paid") {
             // Create a mock checkout.session.completed event
-            const mockEvent: Stripe.CheckoutSessionCompletedEvent = {
+            const mockEvent: any = {
                 id: `manual_${Date.now()}`,
                 object: "event",
                 api_version: "2024-12-18.acacia",
@@ -98,7 +98,7 @@ const verifyPayment = async (req: Request, res: Response, next: NextFunction) =>
                 data: { object: session },
             };
 
-            const result = await handleStripeWebhookEvent(mockEvent as Stripe.Event);
+            const result = await handleStripeWebhookEvent(mockEvent as any);
             
             return res.status(200).json({
                 success: true,
