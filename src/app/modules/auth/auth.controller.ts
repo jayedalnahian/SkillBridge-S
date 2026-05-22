@@ -11,11 +11,9 @@ import { envVars } from "../../config/env.js";
 import { auth } from "../../lib/auth.js";
 
 const registerUser = catchAsync(async (req: Request, res: Response) => {
-  console.log("Entering AuthController.registerUser...");
-  console.log("req.file:", req.file);
+
   const result = await AuthService.registerUser(
     req.body,
-    req.file?.path as string,
   );
   console.log("AuthService.registerUser result obtained.");
   const { accessToken, refreshToken, token, ...rest } = result;

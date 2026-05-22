@@ -5,11 +5,9 @@ import { Request, Response } from "express";
 import { TutorService } from "./tutor.service.js";
 import { IQueryParams } from "../../interface/query.interface.js";
 import { ITutorPayload, ITutorUpdatePayload } from "./tutor.type.js";
-import AppError from "../../errorHalpers/AppError.js";
-import prismaPkg from "../../generated/prisma/index.js";
 import type { UserRole as TUserRole } from "../../generated/prisma/index.js";
 
-const { UserRole } = prismaPkg as any;
+
 
 const getAllTutors = catchAsync(async (req: Request, res: Response) => {
   const result = await TutorService.getAllTutors(req.query as IQueryParams);
