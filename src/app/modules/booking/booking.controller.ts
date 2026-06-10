@@ -7,121 +7,127 @@ import AppError from "../../errorHalpers/AppError.js";
 import { UserRole } from "../../generated/prisma/index.js";
 
 const createBooking = catchAsync(async (req: Request, res: Response) => {
-    const payload = req.body;
-    const tutorId = req.params.id;
-    if (!tutorId) {
-        throw new AppError(status.BAD_REQUEST, "Tutor ID is required");
-    }
-    const userId = req.user?.userId;
-    const result = await BookingService.createBooking({ payload, tutorId: tutorId as string, userId: userId as string });
-    sendResponse(res, {
-        statusCode: status.OK,
-        success: true,
-        message: "Booking created successfully",
-        data: result,
-        error: null,
-    });
+  const payload = req.body;
+  const tutorId = req.params.id;
+  if (!tutorId) {
+    throw new AppError(status.BAD_REQUEST, "Tutor ID is required");
+  }
+  const userId = req.user?.userId;
+  const result = await BookingService.createBooking({
+    payload,
+    tutorId: tutorId as string,
+    userId: userId as string,
+  });
+  sendResponse(res, {
+    statusCode: status.OK,
+    success: true,
+    message: "Booking created successfully",
+    data: result,
+    error: null,
+  });
 });
 
 /**
  * Get all bookings with search, filter, pagination, and sorting
  */
 const getAllBookings = catchAsync(async (req: Request, res: Response) => {
-    const query = req.query;
-    const userRole = req.user?.role as UserRole;
-    const userId = req.user?.userId as string;
-    const result = await BookingService.getAllBookings(query, userRole, userId);
-    sendResponse(res, {
-        statusCode: status.OK,
-        success: true,
-        message: "Bookings retrieved successfully",
-        data: result,
-        error: null,
-    });
+  const query = req.query;
+  const userRole = req.user?.role as UserRole;
+  const userId = req.user?.userId as string;
+  const result = await BookingService.getAllBookings(query, userRole, userId);
+  sendResponse(res, {
+    statusCode: status.OK,
+    success: true,
+    message: "Bookings retrieved successfully",
+    data: result,
+    error: null,
+  });
 });
 
 /**
  * Get a single booking by ID
  */
 const getBookingById = catchAsync(async (req: Request, res: Response) => {
-    const { id } = req.params;
-    const result = await BookingService.getBookingById(id as string);
-    sendResponse(res, {
-        statusCode: status.OK,
-        success: true,
-        message: "Booking retrieved successfully",
-        data: result,
-        error: null,
-    });
+  const { id } = req.params;
+  const result = await BookingService.getBookingById(id as string);
+  sendResponse(res, {
+    statusCode: status.OK,
+    success: true,
+    message: "Booking retrieved successfully",
+    data: result,
+    error: null,
+  });
 });
 
-
 const hardDeleteBooking = catchAsync(async (req: Request, res: Response) => {
-    const bookingId = req.params.id as string
-    const result = await BookingService.hardDeleteBooking(bookingId)
-    sendResponse(res, {
-        statusCode: status.OK,
-        success: true,
-        message: "Booking deleted successfully",
-        data: result,
-        error: null,
-    })
+  const bookingId = req.params.id as string;
+  const result = await BookingService.hardDeleteBooking(bookingId);
+  sendResponse(res, {
+    statusCode: status.OK,
+    success: true,
+    message: "Booking deleted successfully",
+    data: result,
+    error: null,
+  });
 });
 
 const changeBookingStatus = catchAsync(async (req: Request, res: Response) => {
-    const bookingId = req.params.id as string;
-    const { status: bookingStatus, cancelReason } = req.body;
-    console.log(req, "Request from the change booking status")
-    const userRole = req.user?.role as UserRole;
+  const bookingId = req.params.id as string;
+  const { status: bookingStatus, cancelReason } = req.body;
+  console.log(req, "Request from the change booking status");
+  const userRole = req.user?.role as UserRole;
 
-    const result = await BookingService.changeBookingStatus(
-        bookingId,
-        bookingStatus,
-        userRole,
-        cancelReason
-    );
+  const result = await BookingService.changeBookingStatus(
+    bookingId,
+    bookingStatus,
+    userRole,
+    cancelReason,
+  );
 
-    sendResponse(res, {
-        statusCode: status.OK,
-        success: true,
-        message: `Booking status changed to ${bookingStatus} successfully`,
-        data: result,
-        error: null,
-    });
+  sendResponse(res, {
+    statusCode: status.OK,
+    success: true,
+    message: `Booking status changed to ${bookingStatus} successfully`,
+    data: result,
+    error: null,
+  });
 });
 
 const confirmBooking = catchAsync(async (req: Request, res: Response) => {
-    const bookingId = req.params.id as string;
-    const { meetingLink } = req.body;
-    const result = await BookingService.confirmBooking(bookingId, meetingLink as string);
-    sendResponse(res, {
-        statusCode: status.OK,
-        success: true,
-        message: "Booking confirmed successfully",
-        data: result,
-        error: null,
-    });
+  const bookingId = req.params.id as string;
+  const { meetingLink } = req.body;
+  const result = await BookingService.confirmBooking(
+    bookingId,
+    meetingLink as string,
+  );
+  sendResponse(res, {
+    statusCode: status.OK,
+    success: true,
+    message: "Booking confirmed successfully",
+    data: result,
+    error: null,
+  });
 });
 
 const completeBooking = catchAsync(async (req: Request, res: Response) => {
-    const bookingId = req.params.id as string;
-    const payload = req.body;
-    const result = await BookingService.completeBooking({bookingId, payload});
-    sendResponse(res, {
-        statusCode: status.OK,
-        success: true,
-        message: "Booking completed successfully",
-        data: result,
-        error: null,
-    });
+  const bookingId = req.params.id as string;
+  const payload = req.body;
+  const result = await BookingService.completeBooking({ bookingId, payload });
+  sendResponse(res, {
+    statusCode: status.OK,
+    success: true,
+    message: "Booking completed successfully",
+    data: result,
+    error: null,
+  });
 });
 
 export const BookingController = {
-    createBooking,
-    getAllBookings,
-    getBookingById,
-    hardDeleteBooking,
-    changeBookingStatus,
-    confirmBooking,
-    completeBooking
+  createBooking,
+  getAllBookings,
+  getBookingById,
+  hardDeleteBooking,
+  changeBookingStatus,
+  confirmBooking,
+  completeBooking,
 };

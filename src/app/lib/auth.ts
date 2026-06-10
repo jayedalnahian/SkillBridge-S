@@ -100,9 +100,7 @@ export const auth = betterAuth({
             where: { email },
           });
           if (user) break;
-          console.log(
-            `[auth.ts] User not found, retrying lookup (${i + 1}/3)...`,
-          );
+          console.log(`[auth.ts] User not found, retrying lookup (${i + 1}/3)...`);
           await new Promise((resolve) => setTimeout(resolve, 500)); // wait 500ms
         }
 
@@ -124,7 +122,9 @@ export const auth = betterAuth({
           if (!user.emailVerified) {
             console.log(`[auth.ts] Sending verification email to ${email}...`);
             try {
-              console.log(`[auth.ts] Attempting to send email via nodemailer to: ${email}`);
+              console.log(
+                `[auth.ts] Attempting to send email via nodemailer to: ${email}`,
+              );
               await sendEmail({
                 to: email,
                 subject: "Verify your email",
@@ -134,7 +134,9 @@ export const auth = betterAuth({
                   otp,
                 },
               });
-              console.log(`[auth.ts] Verification email sent SUCCESFULLY to ${email}`);
+              console.log(
+                `[auth.ts] Verification email sent SUCCESFULLY to ${email}`,
+              );
             } catch (error: any) {
               console.error(
                 `[auth.ts] FAILED to send verification email to ${email}:`,
@@ -142,15 +144,11 @@ export const auth = betterAuth({
               );
             }
           } else {
-            console.log(
-              `[auth.ts] User ${email} already verified. Skipping email.`,
-            );
+            console.log(`[auth.ts] User ${email} already verified. Skipping email.`);
           }
         } else if (type === "forget-password") {
           if (user) {
-            console.log(
-              `[auth.ts] Sending forget-password email to ${email}...`,
-            );
+            console.log(`[auth.ts] Sending forget-password email to ${email}...`);
             try {
               await sendEmail({
                 to: email,

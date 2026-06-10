@@ -21,9 +21,9 @@ export const seedAdmin = async () => {
         where: { userId: existingUser.id },
       });
       if (adminProfile) {
-        console.log(
-          "Super admin already exists with profile. Skipping seeding.",
-        );
+        // console.log(
+        //   "Super admin already exists with profile. Skipping seeding.",
+        // );
         return;
       }
     }
@@ -31,7 +31,7 @@ export const seedAdmin = async () => {
     let userId: string;
 
     if (!existingUser) {
-      console.log("Creating new super admin user...");
+      // console.log("Creating new super admin user...");
       const signUpResponse = await auth.api.signUpEmail({
         body: {
           email: adminEmail,
@@ -49,7 +49,7 @@ export const seedAdmin = async () => {
       }
       userId = signUpResponse.user.id;
     } else {
-      console.log("User already exists, updating to SUPER_ADMIN role...");
+      // console.log("User already exists, updating to SUPER_ADMIN role...");
       userId = existingUser.id;
     }
 
@@ -83,7 +83,7 @@ export const seedAdmin = async () => {
       });
     });
 
-    console.log("First Admin Seeded Successfully");
+    // console.log("First Admin Seeded Successfully");
   } catch (error) {
     console.error("Error seeding first admin: ", error);
     // We avoid deleting the user here to prevent P2003 (Foreign Key constraint violation)

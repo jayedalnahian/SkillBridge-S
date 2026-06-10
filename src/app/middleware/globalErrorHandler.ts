@@ -30,9 +30,15 @@ export const globalErrorHandler = async (
   // }
 
   // if (req.files && Array.isArray(req.files) && req.files.length > 0) {
+<<<<<<< HEAD
   //   const imageUrls = req.files.map((file) => file.path);
 
   //   await Promise.all(imageUrls.map((url) => deleteFileFromCloudinary(url)));
+=======
+  // const imageUrls = req.files.map((file) => file.path);
+
+  // await Promise.all(imageUrls.map((url) => deleteFileFromCloudinary(url)));
+>>>>>>> f27f45b (the registration related bug fixed)
   // }
 
   let errorSources: TErrorSources[] = [];

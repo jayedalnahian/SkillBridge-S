@@ -1,7 +1,12 @@
 import status from "http-status";
 import AppError from "../../errorHalpers/AppError.js";
 import prismaClientPkg from "../../generated/prisma/client.js";
-import type { Category, Prisma, Tutor, UserRole as TUserRole } from "../../generated/prisma/client.js";
+import type {
+  Category,
+  Prisma,
+  Tutor,
+  UserRole as TUserRole,
+} from "../../generated/prisma/client.js";
 import prismaPkg from "../../generated/prisma/index.js";
 import { IQueryParams } from "../../interface/query.interface.js";
 import { prisma } from "../../lib/prisma.js";
@@ -38,9 +43,7 @@ const getAllTutors = async (query: IQueryParams) => {
 
   // Handle availableDays filter - supports single or multiple days
   if (availableDays) {
-    const days = Array.isArray(availableDays)
-      ? availableDays
-      : [availableDays];
+    const days = Array.isArray(availableDays) ? availableDays : [availableDays];
 
     if (days.length === 1) {
       // Single day: use 'has' operator
@@ -209,7 +212,7 @@ const createTutor = async (payload: ITutorPayload) => {
     });
     return result;
   } catch (error) {
-    console.log("Transaction error: ", error);
+    // console.log("Transaction error: ", error);
     await prisma.user.delete({
       where: {
         id: userData.user.id,
@@ -240,7 +243,8 @@ const updateTutor = async (
   role: TUserRole,
 ) => {
   // Extract categories and time fields from payload
-  const { categories, availabilityStartTime, availabilityEndTime, ...rest } = payload;
+  const { categories, availabilityStartTime, availabilityEndTime, ...rest } =
+    payload;
 
   const tutor = await prisma.tutor.findUnique({
     where: { id, isDeleted: false },
@@ -299,8 +303,10 @@ const updateTutor = async (
   });
 
   // Add time fields if they were provided
-  if (availabilityStartTime !== undefined) updateData.availabilityStartTime = availabilityStartTime;
-  if (availabilityEndTime !== undefined) updateData.availabilityEndTime = availabilityEndTime;
+  if (availabilityStartTime !== undefined)
+    updateData.availabilityStartTime = availabilityStartTime;
+  if (availabilityEndTime !== undefined)
+    updateData.availabilityEndTime = availabilityEndTime;
 
   // Handle categories update if provided
   if (categories !== undefined) {
@@ -433,17 +439,21 @@ const bulkSoftDeleteTutors = async (ids: string[]) => {
       messages.push(`${results.notFound.length} tutor(s) not found`);
     }
     if (results.hasBookings.length > 0) {
-      messages.push(`${results.hasBookings.length} tutor(s) have active/pending bookings`);
+      messages.push(
+        `${results.hasBookings.length} tutor(s) have active/pending bookings`,
+      );
     }
     if (results.alreadyDeleted.length > 0) {
-      messages.push(`${results.alreadyDeleted.length} tutor(s) already deleted`);
+      messages.push(
+        `${results.alreadyDeleted.length} tutor(s) already deleted`,
+      );
     }
     if (results.errors.length > 0) {
       messages.push(`${results.errors.length} tutor(s) failed to delete`);
     }
     throw new AppError(status.BAD_REQUEST, messages.join("; "));
   }
-  console.log(results)
+  // console.log(results);
   return results;
 };
 
@@ -605,10 +615,12 @@ const getBookingStatusDistribution = async (tutorId: string) => {
     _count: { status: true },
   });
 
-  return distribution.map((item: { status: string; _count: { status: number } }) => ({
-    status: item.status,
-    count: item._count.status,
-  }));
+  return distribution.map(
+    (item: { status: string; _count: { status: number } }) => ({
+      status: item.status,
+      count: item._count.status,
+    }),
+  );
 };
 
 const getPaymentStatusDistribution = async (tutorId: string) => {
@@ -624,7 +636,8 @@ const getPaymentStatusDistribution = async (tutorId: string) => {
 
   const distribution: Record<string, number> = {};
   bookings.forEach((booking: { paymentStatus: string }) => {
-    distribution[booking.paymentStatus] = (distribution[booking.paymentStatus] || 0) + 1;
+    distribution[booking.paymentStatus] =
+      (distribution[booking.paymentStatus] || 0) + 1;
   });
 
   return Object.entries(distribution).map(([status, count]) => ({
@@ -702,12 +715,15 @@ const getMonthlyEarnings = async (tutorId: string) => {
   });
 
   const monthlyData: Record<string, number> = {};
-  bookings.forEach((booking: { createdAt: Date; payment: { amount: number } | null }) => {
-    if (booking.payment) {
-      const monthKey = booking.createdAt.toISOString().slice(0, 7);
-      monthlyData[monthKey] = (monthlyData[monthKey] || 0) + booking.payment.amount;
-    }
-  });
+  bookings.forEach(
+    (booking: { createdAt: Date; payment: { amount: number } | null }) => {
+      if (booking.payment) {
+        const monthKey = booking.createdAt.toISOString().slice(0, 7);
+        monthlyData[monthKey] =
+          (monthlyData[monthKey] || 0) + booking.payment.amount;
+      }
+    },
+  );
 
   return Object.entries(monthlyData)
     .map(([month, earnings]) => ({ month, earnings }))
@@ -775,20 +791,22 @@ const getUpcomingSessions = async (tutorId: string) => {
     },
   });
 
-  return bookings.map((booking: {
-    id: string;
-    Student: { name: string };
-    startDateTime: Date;
-    duration: number;
-    meetingLink: string | null;
-  }) => ({
-    id: booking.id,
-    studentName: booking.Student.name,
-    subject: "Tutoring Session",
-    startDateTime: booking.startDateTime.toISOString(),
-    duration: booking.duration,
-    meetingLink: booking.meetingLink,
-  }));
+  return bookings.map(
+    (booking: {
+      id: string;
+      Student: { name: string };
+      startDateTime: Date;
+      duration: number;
+      meetingLink: string | null;
+    }) => ({
+      id: booking.id,
+      studentName: booking.Student.name,
+      subject: "Tutoring Session",
+      startDateTime: booking.startDateTime.toISOString(),
+      duration: booking.duration,
+      meetingLink: booking.meetingLink,
+    }),
+  );
 };
 
 const getTopStudents = async (tutorId: string) => {
@@ -810,31 +828,36 @@ const getTopStudents = async (tutorId: string) => {
     },
   });
 
-  const studentStats: Record<string, {
-    id: string;
-    name: string;
-    totalSessions: number;
-    totalPaid: number;
-  }> = {};
+  const studentStats: Record<
+    string,
+    {
+      id: string;
+      name: string;
+      totalSessions: number;
+      totalPaid: number;
+    }
+  > = {};
 
-  bookings.forEach((booking: {
-    Student: { id: string; name: string };
-    payment: { amount: number } | null;
-  }) => {
-    const studentId = booking.Student.id;
-    if (!studentStats[studentId]) {
-      studentStats[studentId] = {
-        id: studentId,
-        name: booking.Student.name,
-        totalSessions: 0,
-        totalPaid: 0,
-      };
-    }
-    studentStats[studentId].totalSessions++;
-    if (booking.payment) {
-      studentStats[studentId].totalPaid += booking.payment.amount;
-    }
-  });
+  bookings.forEach(
+    (booking: {
+      Student: { id: string; name: string };
+      payment: { amount: number } | null;
+    }) => {
+      const studentId = booking.Student.id;
+      if (!studentStats[studentId]) {
+        studentStats[studentId] = {
+          id: studentId,
+          name: booking.Student.name,
+          totalSessions: 0,
+          totalPaid: 0,
+        };
+      }
+      studentStats[studentId].totalSessions++;
+      if (booking.payment) {
+        studentStats[studentId].totalPaid += booking.payment.amount;
+      }
+    },
+  );
 
   return Object.values(studentStats)
     .sort((a, b) => b.totalSessions - a.totalSessions)
@@ -885,9 +908,13 @@ const getTutorStats = async (tutorId: string) => {
   ]);
 
   const totalReviews = reviews.length;
-  const averageRating = totalReviews > 0
-    ? reviews.reduce((sum: number, r: { rating: number }) => sum + r.rating, 0) / totalReviews
-    : null;
+  const averageRating =
+    totalReviews > 0
+      ? reviews.reduce(
+          (sum: number, r: { rating: number }) => sum + r.rating,
+          0,
+        ) / totalReviews
+      : null;
 
   const bookingsWithPayments = await prisma.booking.findMany({
     where: {
@@ -901,8 +928,9 @@ const getTutorStats = async (tutorId: string) => {
   });
 
   const totalEarnings = bookingsWithPayments.reduce(
-    (sum: number, b: { payment: { amount: number } | null }) => sum + (b.payment?.amount || 0),
-    0
+    (sum: number, b: { payment: { amount: number } | null }) =>
+      sum + (b.payment?.amount || 0),
+    0,
   );
 
   return {

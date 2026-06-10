@@ -12,7 +12,9 @@ export const googleLoginHealpers = async (profile: any) => {
 
   if (!existingUser) {
     // If user doesn't exist, we return null so the auth config can handle it as a new student
-    console.log(`[GoogleLoginHelper] User ${profile.email} not found. Preparing for auto-registration.`);
+    console.log(
+      `[GoogleLoginHelper] User ${profile.email} not found. Preparing for auto-registration.`,
+    );
     return null;
   }
 

@@ -8,3 +8,8 @@ dist
 /src/app/generated
 
 prisma/migrations
+<<<<<<< HEAD
+=======
+.vercel
+.env*
+>>>>>>> f27f45b (the registration related bug fixed)
