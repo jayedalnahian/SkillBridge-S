@@ -1,237 +1,193 @@
 # SkillBridge 🎓
-**"Connect with Expert Tutors, Learn Anything"**
 
----
-
-## Project Overview
+> **Connect with Expert Tutors, Learn Anything**
 
 SkillBridge is a full-stack web application that connects learners with expert tutors. Students can browse tutor profiles, view availability, and book sessions instantly. Tutors can manage their profiles, set availability, and track their teaching sessions. Admins oversee the platform and manage users.
 
 ---
 
-## Roles & Permissions
+## 🌐 Live URLs
 
-| Role | Description | Key Permissions |
-|------|-------------|-----------------|
-| **Student** | Learners who book tutoring sessions | Browse tutors, book sessions, leave reviews, manage profile |
-| **Tutor** | Experts who offer tutoring services | Create profile, set availability, view bookings, manage subjects |
-| **Admin** | Platform moderators | Manage all users, view analytics, moderate content |
-
-> 💡 **Note**: Users select their role during registration.Admin accounts should be seeded in the database.
+| Service | URL |
+|---------|-----|
+| Frontend | [https://skill-bridge-c.vercel.app](https://skill-bridge-c.vercel.app) |
+| Backend | [https://skill-bridge-s.vercel.app](https://skill-bridge-s.vercel.app) |
 
 ---
 
-## Tech Stack
+## ✨ Features
 
-🛠️ **See [README.md](./README.md#-tech-stack) for complete technology specifications.**
-
----
-
-## Features
-
-### Public Features
+### Public
 - Browse and search tutors by subject, rating, and price
 - Filter tutors by category
 - View detailed tutor profiles with reviews
 - Landing page with featured tutors
 
-### Student Features
-- Register and login as student
+### Student
+- Register and log in as a student
 - Book tutoring sessions
 - View upcoming and past bookings
 - Leave reviews after sessions
 - Manage profile
 
-### Tutor Features
-- Register and login as tutor
+### Tutor
+- Register and log in as a tutor
 - Create and update tutor profile
 - Set availability slots
 - View teaching sessions
 - See ratings and reviews
 
-### Admin Features
+### Admin
 - View all users (students and tutors)
 - Manage user status (ban/unban)
 - View all bookings
 - Manage categories
 
----
-
-## Pages & Routes
-
-> ⚠️ **Note**: These routes are examples. You may add, edit, or remove routes based on your implementation needs.
-
-### Public Routes
-| Route | Page | Description |
-|-------|------|-------------|
-| `/` | Home | Hero, search, featured tutors |
-| `/tutors` | Browse Tutors | List with filters |
-| `/tutors/:id` | Tutor Profile | Details, reviews, book |
-| `/login` | Login | Login form |
-| `/register` | Register | Registration form |
-
-### Student Routes (Private)
-| Route | Page | Description |
-|-------|------|-------------|
-| `/dashboard` | Dashboard | Overview, bookings |
-| `/dashboard/bookings` | My Bookings | Booking history |
-| `/dashboard/profile` | Profile | Edit info |
-
-### Tutor Routes (Private)
-| Route | Page | Description |
-|-------|------|-------------|
-| `/tutor/dashboard` | Dashboard | Sessions, stats |
-| `/tutor/availability` | Availability | Set time slots |
-| `/tutor/profile` | Profile | Edit tutor info |
-
-### Admin Routes (Private)
-| Route | Page | Description |
-|-------|------|-------------|
-| `/admin` | Dashboard | Statistics |
-| `/admin/users` | Users | Manage users |
-| `/admin/bookings` | Bookings | All bookings |
-| `/admin/categories` | Categories | Manage categories |
+> **Note:** Users select their role during registration. Admin accounts are seeded in the database.
 
 ---
 
-## Database Tables
+## 🛠️ Tech Stack
 
-Design your own schema for the following tables:
+### Backend
 
-- **Users** - Store user information and authentication details
-- **TutorProfiles** - Tutor-specific information (linked to Users)
-- **Categories** - Subject categories for tutoring
-- **Bookings** - Session bookings between students and tutors
-- **Reviews** - Student reviews for tutors
+| Category | Technology |
+|----------|------------|
+| Runtime | Node.js + TypeScript |
+| Framework | Express v5 |
+| Database | PostgreSQL |
+| ORM | Prisma v7 |
+| Auth | BetterAuth + JWT |
+| Storage | Cloudinary |
+| Payments | Stripe |
+| Email | Nodemailer |
+| Validation | Zod v4 |
+| Template Engine | EJS |
+| Testing | Vitest |
 
-> 💡 *Think about what fields each table needs based on the features above.*
+### Frontend
 
----
-
-## API Endpoints
-
-> ⚠️ **Note**: These endpoints are examples. You may add, edit, or remove endpoints based on your implementation needs.
-
-### Authentication
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | `/api/auth/register` | Register new user |
-| POST | `/api/auth/login` | Login user |
-| GET | `/api/auth/me` | Get current user |
-
-### Tutors (Public)
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/tutors` | Get all tutors with filters |
-| GET | `/api/tutors/:id` | Get tutor details |
-| GET | `/api/categories` | Get all categories |
-
-### Bookings
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | `/api/bookings` | Create new booking |
-| GET | `/api/bookings` | Get user's bookings |
-| GET | `/api/bookings/:id` | Get booking details |
-
-### Tutor Management
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| PUT | `/api/tutor/profile` | Update tutor profile |
-| PUT | `/api/tutor/availability` | Update availability |
-
-### Reviews
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | `/api/reviews` | Create review |
-
-### Admin
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/admin/users` | Get all users |
-| PATCH | `/api/admin/users/:id` | Update user status |
+| Category | Technology |
+|----------|------------|
+| Framework | Next.js 16 + React 19 |
+| Styling | Tailwind CSS v4 |
+| UI Components | Radix UI + shadcn/ui |
+| Data Fetching | TanStack Query v5 |
+| Forms | TanStack Form |
+| Tables | TanStack Table |
+| HTTP Client | Axios |
+| Auth | BetterAuth |
+| Charts | Recharts |
+| Animations | Framer Motion |
+| Notifications | Sonner |
 
 ---
 
-## Flow Diagrams
+## 🚀 Setup Instructions
 
-### 👨‍🎓 Student Journey
+### Prerequisites
 
-```
-                              ┌──────────────┐
-                              │   Register   │
-                              └──────────────┘
-                                     │
-                                     ▼
-                              ┌──────────────┐
-                              │Browse Tutors │
-                              └──────────────┘
-                                     │
-                                     ▼
-                              ┌──────────────┐
-                              │ View Profile │
-                              └──────────────┘
-                                     │
-                                     ▼
-                              ┌──────────────┐
-                              │ Book Session │
-                              └──────────────┘
-                                     │
-                                     ▼
-                              ┌──────────────┐
-                              │    Attend    │
-                              └──────────────┘
-                                     │
-                                     ▼
-                              ┌──────────────┐
-                              │ Leave Review │
-                              └──────────────┘
-```
-
-### 👨‍🏫 Tutor Journey
-
-```
-                              ┌──────────────┐
-                              │   Register   │
-                              └──────────────┘
-                                     │
-                                     ▼
-                              ┌──────────────┐
-                              │Create Profile│
-                              └──────────────┘
-                                     │
-                                     ▼
-                              ┌──────────────┐
-                              │    Set       │
-                              │ Availability │
-                              └──────────────┘
-                                     │
-                                     ▼
-                              ┌──────────────┐
-                              │View Sessions │
-                              └──────────────┘
-                                     │
-                                     ▼
-                              ┌──────────────┐
-                              │Mark Complete │
-                              └──────────────┘
-```
-
-### 📊 Booking Status
-
-```
-                              ┌──────────────┐
-                              │  CONFIRMED   │
-                              │   (instant)  │
-                              └──────────────┘
-                               /            \
-                              /              \
-                       (tutor)          (student)
-                        marks            cancels
-                            /                \
-                           ▼                  ▼
-                   ┌──────────────┐   ┌──────────────┐
-                   │  COMPLETED   │   │  CANCELLED   │
-                   └──────────────┘   └──────────────┘
-```
+- Node.js v18+
+- PostgreSQL database
+- Cloudinary account
+- Stripe account
 
 ---
+
+### Backend Setup
+
+```bash
+# 1. Clone the repository
+git clone https://github.com/jayedalnahian/SkillBridge-S
+cd SkillBridge-S
+
+# 2. Install dependencies
+npm install
+
+# 3. Create environment file
+cp .env.example .env
+```
+
+Fill in your `.env` file:
+
+```env
+DATABASE_URL=postgresql://user:password@host:5432/skillbridge
+JWT_SECRET=your_jwt_secret
+
+CLOUDINARY_CLOUD_NAME=your_cloud_name
+CLOUDINARY_API_KEY=your_api_key
+CLOUDINARY_API_SECRET=your_api_secret
+
+STRIPE_SECRET_KEY=your_stripe_secret
+STRIPE_WEBHOOK_SECRET=your_webhook_secret
+
+EMAIL_HOST=smtp.example.com
+EMAIL_USER=your_email
+EMAIL_PASS=your_password
+
+BETTER_AUTH_SECRET=your_better_auth_secret
+BETTER_AUTH_URL=http://localhost:5000
+```
+
+```bash
+# 4. Run database migrations
+npx prisma migrate dev
+
+# 5. Seed the database (creates admin accounts)
+npx prisma db seed
+
+# 6. Start the development server
+npm run dev
+```
+
+The backend will be running at `http://localhost:5000`.
+
+---
+
+### Frontend Setup
+
+```bash
+# 1. Clone the repository
+git clone https://github.com/jayedalnahian/skillbridge-c
+cd SkillBridge-C
+
+# 2. Install dependencies
+npm install
+
+# 3. Create environment file
+cp .env.example .env.local
+```
+
+Fill in your `.env.local` file:
+
+```env
+NEXT_PUBLIC_API_URL=http://localhost:5000
+NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=your_stripe_publishable_key
+
+BETTER_AUTH_SECRET=your_better_auth_secret
+BETTER_AUTH_URL=http://localhost:3000
+```
+
+```bash
+# 4. Start the development server
+npm run dev
+```
+
+The frontend will be running at `http://localhost:3000`.
+
+---
+
+## 👤 Roles
+
+| Role | Description | Access |
+|------|-------------|--------|
+| **Student** | Learners who book tutoring sessions | Browse tutors, book sessions, leave reviews, manage profile |
+| **Tutor** | Experts who offer tutoring services | Create profile, set availability, view bookings, manage subjects |
+| **Admin** | Platform moderators | Manage all users, view analytics, moderate content |
+
+---
+
+## 📁 Repository Links
+
+- **Frontend:** [https://github.com/jayedalnahian/skillbridge-c](https://github.com/jayedalnahian/skillbridge-c)
+- **Backend:** [https://github.com/jayedalnahian/SkillBridge-S](https://github.com/jayedalnahian/SkillBridge-S)
