@@ -93,6 +93,10 @@ const loginUser = async (payload: IAuth) => {
     },
   });
 
+  if (!data.user.emailVerified) {
+    throw new AppError(status.UNAUTHORIZED, "Email not verified");
+  }
+
   if (data.user.status === UserStatus.BANNED) {
     throw new AppError(status.FORBIDDEN, "User is blocked");
   }

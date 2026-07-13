@@ -7,6 +7,8 @@ import { AdminRouter } from "../modules/admin/admin.router.js";
 import { BookingRouter } from "../modules/booking/booking.router.js";
 import { PaymentRouter } from "../modules/payment/payment.router.js";
 import { ReviewRouter } from "../modules/review/review.router.js";
+import { statsRoute } from "../modules/stats/stats.route.js";
+import { MessageRouter } from "../modules/message/message.router.js";
 
 const router = Router();
 
@@ -25,5 +27,9 @@ router.use("/booking", BookingRouter);
 router.use("/payment", PaymentRouter);
 
 router.use("/review", ReviewRouter);
+
+router.use("/stats", statsRoute);
+
+router.use("/message", MessageRouter);
 
 export const IndexRouter = router;

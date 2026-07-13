@@ -86,16 +86,16 @@ const studentId = student.id;
 
 const getAllReviews = async (
   query: IQueryParams,
-  userRole: UserRole,
-  userId: string,
+  userRole?: UserRole,
+  userId?: string,
 ) => {
   // Initialize filter if not exists
   if (!query.filter) {
     query.filter = {};
   }
 
-  // Apply role-based filtering
-  if (userRole === UserRole.STUDENT) {
+  // Apply role-based filtering for authenticated users
+  if (userRole === UserRole.STUDENT && userId) {
     const student = await prisma.student.findUnique({
       where: { userId },
     });
@@ -105,7 +105,7 @@ const getAllReviews = async (
     query.filter.studentId = student.id;
   }
 
-  if (userRole === UserRole.TUTOR) {
+  if (userRole === UserRole.TUTOR && userId) {
     const tutor = await prisma.tutor.findUnique({
       where: { userId },
     });

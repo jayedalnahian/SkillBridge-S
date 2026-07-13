@@ -15,10 +15,9 @@ router.post(
   ReviewController.createReview,
 );
 
-// Get all reviews (role-based: admin sees all, tutor/student sees own)
+// Get all reviews (public read access; authenticated users may still see role-filtered results)
 router.get(
   "/",
-  checkAuth(UserRole.ADMIN, UserRole.TUTOR, UserRole.STUDENT),
   ReviewController.getAllReviews,
 );
 

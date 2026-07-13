@@ -47,7 +47,7 @@ app.use("/api/v1", IndexRouter);
 app.get("/", async (req: Request, res: Response) => {
   res.status(201).json({
     success: true,
-    message: "Hello World!",
+    message: "Hello World! from SkillBridge-S",
   });
 });
 
